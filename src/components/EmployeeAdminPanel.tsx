@@ -347,36 +347,130 @@ function EmployeeDetailPanel({ employee, onClose }: { employee: Employee; onClos
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {activeTab === 'resultados' && (
           <>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-teal-50 rounded-xl p-3 border border-teal-100">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Eye size={13} className="text-teal-600" />
-                  <span className="text-xs font-bold text-teal-800">Percepción externa</span>
+            <div className="space-y-3">
+              <div
+                className="rounded-2xl border-2 p-4 transition-all"
+                style={{
+                  backgroundColor: cfg ? cfg.bgColor : '#f0fdfa',
+                  borderColor: cfg ? cfg.color : '#99f6e4',
+                }}
+              >
+                <div className="flex items-center gap-1.5 mb-3">
+                  <Eye size={13} style={{ color: cfg?.color ?? '#0d9488' }} />
+                  <span className="text-xs font-bold uppercase tracking-wide" style={{ color: cfg?.color ?? '#0d9488' }}>
+                    Percepción externa
+                  </span>
+                  {percList.length > 0 && (
+                    <span
+                      className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                      style={{ backgroundColor: cfg ? `${cfg.color}20` : '#ccfbf1', color: cfg?.color ?? '#0d9488' }}
+                    >
+                      {percList.length} evaluación{percList.length !== 1 ? 'es' : ''}
+                    </span>
+                  )}
                 </div>
                 {percList.length === 0 ? (
-                  <p className="text-xs text-teal-700 opacity-60">Sin percepciones aún</p>
-                ) : cfg ? (
+                  <p className="text-xs text-gray-400 italic">Sin percepciones aún</p>
+                ) : cfg && derived ? (
                   <>
-                    <div className="text-xl font-black mb-0.5" style={{ color: cfg.color }}>{cfg.code}</div>
-                    <div className="text-xs font-semibold" style={{ color: cfg.color }}>{cfg.label}</div>
-                    <div className="text-xs text-teal-700 mt-1">{percList.length} evaluación{percList.length !== 1 ? 'es' : ''}</div>
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="text-2xl font-black leading-none" style={{ color: cfg.color }}>{cfg.code}</span>
+                      <span className="text-sm font-bold" style={{ color: cfg.textColor }}>{cfg.label}</span>
+                    </div>
+                    <p className="text-xs opacity-75 mb-3 leading-snug" style={{ color: cfg.textColor }}>{cfg.description}</p>
+                    <div className="space-y-2">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-semibold" style={{ color: cfg.textColor }}>Resultados</span>
+                          <span className="text-[10px] font-black" style={{ color: cfg.color }}>
+                            {Math.round(((derived.performance - 1) / 4) * 100)}%
+                          </span>
+                        </div>
+                        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${cfg.color}25` }}>
+                          <div
+                            className="h-2 rounded-full transition-all duration-700"
+                            style={{ width: `${((derived.performance - 1) / 4) * 100}%`, backgroundColor: '#0d9488' }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-semibold" style={{ color: cfg.textColor }}>Valores</span>
+                          <span className="text-[10px] font-black" style={{ color: cfg.color }}>
+                            {Math.round(((derived.potential - 1) / 4) * 100)}%
+                          </span>
+                        </div>
+                        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${cfg.color}25` }}>
+                          <div
+                            className="h-2 rounded-full transition-all duration-700"
+                            style={{ width: `${((derived.potential - 1) / 4) * 100}%`, backgroundColor: '#2563eb' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </>
                 ) : null}
               </div>
 
-              <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <User size={13} className="text-blue-600" />
-                  <span className="text-xs font-bold text-blue-800">Autoevaluación</span>
+              <div
+                className="rounded-2xl border-2 p-4 transition-all"
+                style={{
+                  backgroundColor: cfgAuto ? cfgAuto.bgColor : '#eff6ff',
+                  borderColor: cfgAuto ? cfgAuto.color : '#bfdbfe',
+                }}
+              >
+                <div className="flex items-center gap-1.5 mb-3">
+                  <User size={13} style={{ color: cfgAuto?.color ?? '#2563eb' }} />
+                  <span className="text-xs font-bold uppercase tracking-wide" style={{ color: cfgAuto?.color ?? '#2563eb' }}>
+                    Autoevaluación
+                  </span>
+                  {autoPerc && (
+                    <span
+                      className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                      style={{ backgroundColor: cfgAuto ? `${cfgAuto.color}20` : '#dbeafe', color: cfgAuto?.color ?? '#2563eb' }}
+                    >
+                      {new Date(autoPerc.at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}
+                    </span>
+                  )}
                 </div>
                 {!autoPerc ? (
-                  <p className="text-xs text-blue-700 opacity-60">No completada</p>
-                ) : cfgAuto ? (
+                  <p className="text-xs text-gray-400 italic">No completada</p>
+                ) : cfgAuto && derivedAuto ? (
                   <>
-                    <div className="text-xl font-black mb-0.5" style={{ color: cfgAuto.color }}>{cfgAuto.code}</div>
-                    <div className="text-xs font-semibold" style={{ color: cfgAuto.color }}>{cfgAuto.label}</div>
-                    <div className="text-xs text-blue-700 mt-1">
-                      {new Date(autoPerc.at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="text-2xl font-black leading-none" style={{ color: cfgAuto.color }}>{cfgAuto.code}</span>
+                      <span className="text-sm font-bold" style={{ color: cfgAuto.textColor }}>{cfgAuto.label}</span>
+                    </div>
+                    <p className="text-xs opacity-75 mb-3 leading-snug" style={{ color: cfgAuto.textColor }}>{cfgAuto.description}</p>
+                    <div className="space-y-2">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-semibold" style={{ color: cfgAuto.textColor }}>Resultados</span>
+                          <span className="text-[10px] font-black" style={{ color: cfgAuto.color }}>
+                            {Math.round(((derivedAuto.performance - 1) / 4) * 100)}%
+                          </span>
+                        </div>
+                        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${cfgAuto.color}25` }}>
+                          <div
+                            className="h-2 rounded-full transition-all duration-700"
+                            style={{ width: `${((derivedAuto.performance - 1) / 4) * 100}%`, backgroundColor: '#0d9488' }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-semibold" style={{ color: cfgAuto.textColor }}>Valores</span>
+                          <span className="text-[10px] font-black" style={{ color: cfgAuto.color }}>
+                            {Math.round(((derivedAuto.potential - 1) / 4) * 100)}%
+                          </span>
+                        </div>
+                        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${cfgAuto.color}25` }}>
+                          <div
+                            className="h-2 rounded-full transition-all duration-700"
+                            style={{ width: `${((derivedAuto.potential - 1) / 4) * 100}%`, backgroundColor: '#2563eb' }}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </>
                 ) : null}
