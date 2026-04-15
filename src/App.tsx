@@ -10,21 +10,22 @@ import MiPercepcionPage from './components/MiPercepcionPage';
 import { isEval360Hash, isPercepcionHash, isAutoPercepcionHash } from './utils/hashRoute';
 import { getPathFromLocationHash } from './utils/hashRoute';
 import { useEvaluationStore } from './context/EvaluationContext';
-import { BarChart3, Users, Grid3x3 as Grid3X3, TrendingUp, Award, ClipboardList, CircleUser as UserCircle2, Eye } from 'lucide-react';
+import { BarChart3, Users, Grid3x3 as Grid3X3, TrendingUp, Award, ClipboardList, CircleUser as UserCircle2, Eye, LayoutDashboard, Target, ThumbsUp } from 'lucide-react';
 
 function isMiPercepcionHash(hash: string): boolean {
   const p = getPathFromLocationHash(hash);
   return p === '/mis-resultados' || p.startsWith('/mis-resultados/');
 }
 
-type AdminView = 'overview' | 'empleados' | 'matriz' | 'resultados' | 'eval360';
+type AdminView = 'overview' | 'empleados' | 'matriz' | 'resultados' | 'eval360' | 'panel';
 
-const ADMIN_TABS: { id: AdminView; label: string; icon: React.ReactNode; group?: string }[] = [
+const ADMIN_TABS: { id: AdminView; label: string; icon: React.ReactNode }[] = [
   { id: 'overview', label: 'Resumen', icon: <BarChart3 size={15} /> },
   { id: 'empleados', label: 'Colaboradores', icon: <Users size={15} /> },
   { id: 'matriz', label: 'Matriz 9-Box', icon: <Grid3X3 size={15} /> },
   { id: 'resultados', label: 'Resultados', icon: <Eye size={15} /> },
   { id: 'eval360', label: 'Evaluación 360', icon: <ClipboardList size={15} /> },
+  { id: 'panel', label: 'Panel', icon: <LayoutDashboard size={15} /> },
 ];
 
 function StatCard({
@@ -168,12 +169,104 @@ function OverviewView() {
   );
 }
 
+type PanelTab = 'eval360' | 'empleadoA' | 'aciertos';
+
+const PANEL_TABS: { id: PanelTab; label: string; icon: React.ReactNode }[] = [
+  { id: 'eval360', label: 'Evaluación 360', icon: <ClipboardList size={14} /> },
+  { id: 'empleadoA', label: 'Empleado A', icon: <Users size={14} /> },
+  { id: 'aciertos', label: 'Aciertos y desaciertos', icon: <ThumbsUp size={14} /> },
+];
+
+function PanelView() {
+  const [activeTab, setActiveTab] = useState<PanelTab>('empleadoA');
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="border-b border-gray-100 px-4 pt-4">
+        <div className="flex gap-1 bg-gray-50 rounded-xl p-1 w-fit">
+          {PANEL_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-4">
+        {activeTab === 'eval360' && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+              <ClipboardList size={24} className="text-gray-400" />
+            </div>
+            <h3 className="text-sm font-bold text-gray-700 mb-1">Evaluación 360</h3>
+            <p className="text-xs text-gray-400 max-w-xs">Esta sección estará disponible próximamente.</p>
+          </div>
+        )}
+
+        {activeTab === 'empleadoA' && (
+          <div className="-m-4">
+            <div className="p-4 border-b border-gray-50 bg-gray-50/50">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                <p className="text-xs text-gray-500">Vista completa del sistema — todos los módulos disponibles</p>
+              </div>
+            </div>
+            <div className="p-4 space-y-6">
+              <div>
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Resumen</h4>
+                <OverviewView />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Colaboradores</h4>
+                <EmployeeAdminPanel view="empleados" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Matriz 9-Box</h4>
+                <IndividualView employees={EMPLOYEES} />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Resultados de percepción</h4>
+                <EmployeeAdminPanel view="resultados" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Evaluación 360</h4>
+                <Evaluation360View />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'aciertos' && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+              <Target size={24} className="text-gray-400" />
+            </div>
+            <h3 className="text-sm font-bold text-gray-700 mb-1">Aciertos y desaciertos</h3>
+            <p className="text-xs text-gray-400 max-w-xs">Esta sección estará disponible próximamente.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const VIEW_TITLES: Record<AdminView, { title: string; sub: string }> = {
   overview: { title: 'Resumen Ejecutivo', sub: `Panorama general — ${EMPLOYEES.length} colaboradores registrados` },
   empleados: { title: 'Colaboradores', sub: 'Fichas individuales con resultados, enlaces y asignación de evaluadores' },
   matriz: { title: 'Matriz 9-Box', sub: 'Visualiza la posición de los colaboradores según evaluaciones recibidas' },
   resultados: { title: 'Resultados de percepción', sub: 'Resumen de todas las percepciones externas y autoevaluaciones' },
   eval360: { title: 'Evaluación 360', sub: 'Plantilla de cuestionario, enlaces y resultados 360' },
+  panel: { title: 'Panel', sub: 'Vista unificada con Evaluación 360, colaboradores y análisis de aciertos' },
 };
 
 function MainApp() {
@@ -240,6 +333,7 @@ function MainApp() {
         {activeView === 'matriz' && <IndividualView employees={EMPLOYEES} />}
         {activeView === 'resultados' && <EmployeeAdminPanel view="resultados" />}
         {activeView === 'eval360' && <Evaluation360View />}
+        {activeView === 'panel' && <PanelView />}
       </main>
     </div>
   );
