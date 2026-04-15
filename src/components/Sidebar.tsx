@@ -1,7 +1,7 @@
-import { BarChart3, Users, FileText, UserCheck, ClipboardList, Target, TrendingUp, Lightbulb, Settings, ChevronRight, Menu, X } from 'lucide-react';
+import { BarChart3, UserCheck, ClipboardList, Target, ChevronRight, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
-export type SidebarView = 'dashboard' | 'empleados' | 'evaluaciones' | 'empleadoA' | 'eval360' | 'aciertos' | 'kpi' | 'insights' | 'configuracion';
+export type SidebarView = 'dashboard' | 'empleadoA' | 'eval360' | 'aciertos';
 
 interface SidebarProps {
   activeView: SidebarView;
@@ -10,21 +10,14 @@ interface SidebarProps {
 
 const MENU_ITEMS: { id: SidebarView; label: string; icon: React.ReactNode; section: string }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={18} />, section: 'principal' },
-  { id: 'empleados', label: 'Empleados', icon: <Users size={18} />, section: 'principal' },
-  { id: 'evaluaciones', label: 'Evaluaciones', icon: <FileText size={18} />, section: 'evaluaciones' },
   { id: 'empleadoA', label: 'Empleado A', icon: <UserCheck size={18} />, section: 'evaluaciones' },
   { id: 'eval360', label: 'Evaluación 360', icon: <ClipboardList size={18} />, section: 'evaluaciones' },
   { id: 'aciertos', label: 'Aciertos y Desaciertos', icon: <Target size={18} />, section: 'evaluaciones' },
-  { id: 'kpi', label: 'KPI Tracker', icon: <TrendingUp size={18} />, section: 'analisis' },
-  { id: 'insights', label: 'Insights', icon: <Lightbulb size={18} />, section: 'analisis' },
-  { id: 'configuracion', label: 'Configuración', icon: <Settings size={18} />, section: 'sistema' },
 ];
 
 const SECTIONS = {
   principal: 'Navegación Principal',
   evaluaciones: 'Evaluaciones',
-  analisis: 'Análisis',
-  sistema: 'Sistema',
 };
 
 export default function Sidebar({ activeView, onViewChange }: SidebarProps) {

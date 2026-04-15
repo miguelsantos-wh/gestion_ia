@@ -1,14 +1,9 @@
 import { useLayoutEffect, useState } from 'react';
 import Sidebar, { SidebarView } from './components/Sidebar';
 import DashboardPage from './components/DashboardPage';
-import EmployeesPage from './components/EmployeesPage';
-import EvaluationsPage from './components/EvaluationsPage';
 import EmpleadoAPage from './components/EmpleadoAPage';
 import Evaluation360Page from './components/Evaluation360Page';
 import AciertosDesaciertosPage from './components/AciertosDesaciertosPage';
-import KPITrackerPage from './components/KPITrackerPage';
-import InsightsPage from './components/InsightsPage';
-import ConfigurationPage from './components/ConfigurationPage';
 import PublicEval360Page from './components/PublicEval360Page';
 import PublicPercepcionPage from './components/PublicPercepcionPage';
 import PublicAutoPercepcionPage from './components/PublicAutoPercepcionPage';
@@ -23,14 +18,9 @@ function isMiPercepcionHash(hash: string): boolean {
 
 const PAGE_TITLES: Record<SidebarView, { title: string; sub: string }> = {
   dashboard: { title: 'Dashboard', sub: 'Panorama general del sistema de evaluaciones' },
-  empleados: { title: 'Empleados', sub: 'Gestión centralizada de perfiles y evaluaciones' },
-  evaluaciones: { title: 'Evaluaciones', sub: 'Asignación y seguimiento de evaluaciones' },
   empleadoA: { title: 'Empleado A', sub: 'Resumen, colaboradores, matriz y resultados' },
   eval360: { title: 'Evaluación 360', sub: 'Asignación, seguimiento y análisis de evaluaciones 360' },
   aciertos: { title: 'Aciertos y Desaciertos', sub: 'Evaluación de fortalezas y áreas de mejora' },
-  kpi: { title: 'KPI Tracker', sub: 'Métricas y rendimiento del sistema' },
-  insights: { title: 'Insights', sub: 'Análisis inteligente de datos de evaluación' },
-  configuracion: { title: 'Configuración', sub: 'Ajustes del sistema y gestión de usuarios' },
 };
 
 function MainApp() {
@@ -52,14 +42,9 @@ function MainApp() {
 
         <main className="p-6 max-w-7xl mx-auto">
           {activeView === 'dashboard' && <DashboardPage />}
-          {activeView === 'empleados' && <EmployeesPage />}
-          {activeView === 'evaluaciones' && <EvaluationsPage />}
           {activeView === 'empleadoA' && <EmpleadoAPage />}
           {activeView === 'eval360' && <Evaluation360Page />}
           {activeView === 'aciertos' && <AciertosDesaciertosPage />}
-          {activeView === 'kpi' && <KPITrackerPage />}
-          {activeView === 'insights' && <InsightsPage />}
-          {activeView === 'configuracion' && <ConfigurationPage />}
         </main>
       </div>
     </div>
