@@ -53,6 +53,7 @@ interface EvaluationContextValue {
   saveEval360Assignment: (assignment: Omit<Eval360Assignment, 'id' | 'assignedAt'>) => string;
   completeEval360Assignment: (id: string, scores: number[]) => void;
   removeEval360Assignment: (id: string) => void;
+  syncCompletedEvaluations: () => void;
   resetAll: () => void;
 }
 
@@ -259,6 +260,37 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
     [persist]
   );
 
+  const syncCompletedEvaluations = useCallback(() => {
+    setStore((prev) => {
+      const next: EvaluationStorage = {
+        ...prev,
+        eval360Assignments: (prev.eval360Assignments ?? []).map((assignment) => {
+          if (assignment.completedAt) return assignment;
+
+          const employeeData = prev.threeSixty[assignment.targetEmployeeId];
+          if (!employeeData) return assignment;
+
+          if (assignment.role === 'self' && employeeData.self) {
+            return { ...assignment, completedAt: new Date().toISOString(), scores: employeeData.self };
+          }
+
+          if (assignment.role !== 'self') {
+            const matchingPeer = employeeData.peers.find(
+              (p) => p.evaluatorName === assignment.evaluatorName
+            );
+            if (matchingPeer) {
+              return { ...assignment, completedAt: matchingPeer.at, scores: matchingPeer.scores };
+            }
+          }
+
+          return assignment;
+        }),
+      };
+      persist(next);
+      return next;
+    });
+  }, [persist]);
+
   const resetAll = useCallback(() => {
     const empty: EvaluationStorage = { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [] };
     persist(empty);
@@ -281,6 +313,7 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
       saveEval360Assignment,
       completeEval360Assignment,
       removeEval360Assignment,
+      syncCompletedEvaluations,
       resetAll,
     }),
     [
@@ -298,6 +331,7 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
       saveEval360Assignment,
       completeEval360Assignment,
       removeEval360Assignment,
+      syncCompletedEvaluations,
       resetAll,
     ]
   );

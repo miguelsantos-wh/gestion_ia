@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { EMPLOYEES } from '../data/mockData';
 import {
   DEFAULT_360_TEMPLATE_ID,
@@ -21,11 +21,15 @@ function buildHashLink(path: string, params: Record<string, string>): string {
 type TabId = 'enlaces' | 'resultados' | 'plantilla';
 
 export default function Evaluation360View() {
-  const { threeSixty, resetAll } = useEvaluationStore();
+  const { threeSixty, resetAll, syncCompletedEvaluations } = useEvaluationStore();
   const template = getTemplateById(DEFAULT_360_TEMPLATE_ID)!;
   const [openTpl, setOpenTpl] = useState(false);
   const [selEmp, setSelEmp] = useState(EMPLOYEES[0]?.id ?? '');
   const [activeTab, setActiveTab] = useState<TabId>('enlaces');
+
+  useEffect(() => {
+    syncCompletedEvaluations();
+  }, [syncCompletedEvaluations]);
 
   const selfLink360 = useMemo(
     () => buildHashLink('/eval-360', { employeeId: selEmp, mode: 'self' }),

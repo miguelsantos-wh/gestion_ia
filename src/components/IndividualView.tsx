@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Employee } from '../types';
 import type { EvaluationLens } from '../types/evaluation';
 import { BOX_CONFIGS } from '../data/mockData';
@@ -37,11 +37,15 @@ function lensLabelText(lens: EvaluationLens): string {
 }
 
 export default function IndividualView({ employees }: IndividualViewProps) {
-  const { threeSixty, percepcion, autoPercepcion } = useEvaluationStore();
+  const { threeSixty, percepcion, autoPercepcion, syncCompletedEvaluations } = useEvaluationStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filterDept, setFilterDept] = useState('all');
   const [evaluationLens, setEvaluationLens] = useState<EvaluationLens>('percepcion');
+
+  useEffect(() => {
+    syncCompletedEvaluations();
+  }, [syncCompletedEvaluations]);
 
   const departments = Array.from(new Set(employees.map((e) => e.department)));
 
