@@ -123,9 +123,9 @@ function EmployeePercepcionCard({
             )}
             {derivedPerc && (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">R: <strong>{derivedPerc.performance.toFixed(1)}</strong></span>
+                <span className="text-xs text-gray-500"><strong>{Math.round(((derivedPerc.performance - 1) / 4) * 100)}%</strong> result.</span>
                 <span className="text-gray-300">·</span>
-                <span className="text-xs text-gray-500">V: <strong>{derivedPerc.potential.toFixed(1)}</strong></span>
+                <span className="text-xs text-gray-500"><strong>{Math.round(((derivedPerc.potential - 1) / 4) * 100)}%</strong> valores</span>
               </div>
             )}
             <div className="flex items-center gap-2">
@@ -166,7 +166,7 @@ function EmployeePercepcionCard({
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-0.5">
                             <span className="text-[10px] text-gray-500">Resultados</span>
-                            <span className="text-[10px] font-bold text-gray-700">{derivedPerc.performance.toFixed(1)}</span>
+                            <span className="text-[10px] font-bold text-gray-700">{Math.round(((derivedPerc.performance - 1) / 4) * 100)}%</span>
                           </div>
                           <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                             <div
@@ -178,7 +178,7 @@ function EmployeePercepcionCard({
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-0.5">
                             <span className="text-[10px] text-gray-500">Valores</span>
-                            <span className="text-[10px] font-bold text-gray-700">{derivedPerc.potential.toFixed(1)}</span>
+                            <span className="text-[10px] font-bold text-gray-700">{Math.round(((derivedPerc.potential - 1) / 4) * 100)}%</span>
                           </div>
                           <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                             <div
