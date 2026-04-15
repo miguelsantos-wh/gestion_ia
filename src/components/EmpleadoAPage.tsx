@@ -97,11 +97,6 @@ export default function EmpleadoAPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-blue-50 rounded-2xl border border-blue-200 p-4 mb-4">
-        <h3 className="text-sm font-bold text-blue-900 mb-1">Selecciona un Empleado</h3>
-        <p className="text-sm text-blue-800">Elige un empleado para ver su resumen, colaboradores, matriz 9-Box y resultados</p>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {EMPLOYEES.map((employee) => (
           <button
