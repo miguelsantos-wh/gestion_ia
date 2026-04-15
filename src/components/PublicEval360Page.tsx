@@ -6,13 +6,14 @@ import Eval360Questionnaire from './Eval360Questionnaire';
 import { effectiveLocationHash } from '../utils/hashRoute';
 import { ClipboardList, CheckCircle } from 'lucide-react';
 
-function parseEval360Hash(routeHash: string): { employeeId: string | null; mode: 'self' | 'peer' } {
+function parseEval360Hash(routeHash: string): { employeeId: string | null; mode: 'self' | 'peer'; assignmentId: string | null } {
   const raw = routeHash.replace(/^#/, '') || '';
   const q = raw.includes('?') ? raw.split('?')[1] : '';
   const params = new URLSearchParams(q);
   const employeeId = params.get('employeeId');
   const mode = params.get('mode') === 'self' ? 'self' : 'peer';
-  return { employeeId, mode };
+  const assignmentId = params.get('assignmentId');
+  return { employeeId, mode, assignmentId };
 }
 
 interface PublicEval360PageProps {
@@ -22,8 +23,8 @@ interface PublicEval360PageProps {
 
 export default function PublicEval360Page({ routeHash }: PublicEval360PageProps) {
   const fullHash = effectiveLocationHash(routeHash);
-  const { employeeId, mode } = useMemo(() => parseEval360Hash(fullHash), [fullHash]);
-  const { saveSelfEvaluation, savePeerEvaluation } = useEvaluationStore();
+  const { employeeId, mode, assignmentId } = useMemo(() => parseEval360Hash(fullHash), [fullHash]);
+  const { saveSelfEvaluation, savePeerEvaluation, completeEval360Assignment } = useEvaluationStore();
   const template = getTemplateById(DEFAULT_360_TEMPLATE_ID)!;
   const employee = EMPLOYEES.find((e) => e.id === employeeId);
 
@@ -48,6 +49,9 @@ export default function PublicEval360Page({ routeHash }: PublicEval360PageProps)
       saveSelfEvaluation(employee.id, scores);
     } else {
       savePeerEvaluation(employee.id, evaluatorName, scores);
+    }
+    if (assignmentId) {
+      completeEval360Assignment(assignmentId, scores);
     }
     setDone(true);
   };
