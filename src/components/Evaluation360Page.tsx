@@ -243,5 +243,9 @@ export default function Evaluation360Page() {
     return <Eval360EmployeeView employeeId={currentEmployee.id} />;
   }
 
+  if (isAdmin && currentEmployee) {
+    return <Eval360AdminView selectedEmployeeId={currentEmployee.id} onSelectEmployee={setSelectedEmployeeId} />;
+  }
+
   return <Eval360AdminView selectedEmployeeId={selectedEmployeeId} onSelectEmployee={setSelectedEmployeeId} />;
 }
