@@ -263,10 +263,6 @@ function MainApp() {
               <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Resultados de percepción</h4>
               <EmployeeAdminPanel view="resultados" />
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Evaluación 360</h4>
-              <Evaluation360View />
-            </div>
           </div>
         )}
         {activeView === 'eval360' && <Evaluation360View />}
