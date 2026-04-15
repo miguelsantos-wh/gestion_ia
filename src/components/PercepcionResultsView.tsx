@@ -121,13 +121,6 @@ function EmployeePercepcionCard({
             ) : (
               <span className="text-xs text-gray-400">Sin percepciones</span>
             )}
-            {derivedPerc && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500"><strong>{Math.round(((derivedPerc.performance - 1) / 4) * 100)}%</strong> result.</span>
-                <span className="text-gray-300">·</span>
-                <span className="text-xs text-gray-500"><strong>{Math.round(((derivedPerc.potential - 1) / 4) * 100)}%</strong> valores</span>
-              </div>
-            )}
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1 text-xs text-gray-500">
                 <Eye size={11} /> {percCount} percepción{percCount !== 1 ? 'es' : ''}
@@ -161,32 +154,6 @@ function EmployeePercepcionCard({
                         Promedio:{' '}
                         <span className="font-black" style={{ color: cfg.color }}>{cfg.code}</span>{' '}
                         <span style={{ color: cfg.textColor }}>{cfg.label}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-[10px] text-gray-500">Resultados</span>
-                            <span className="text-[10px] font-bold text-gray-700">{Math.round(((derivedPerc.performance - 1) / 4) * 100)}%</span>
-                          </div>
-                          <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-1.5 rounded-full"
-                              style={{ width: `${((derivedPerc.performance - 1) / 4) * 100}%`, backgroundColor: '#0d9488' }}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-[10px] text-gray-500">Valores</span>
-                            <span className="text-[10px] font-bold text-gray-700">{Math.round(((derivedPerc.potential - 1) / 4) * 100)}%</span>
-                          </div>
-                          <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-1.5 rounded-full"
-                              style={{ width: `${((derivedPerc.potential - 1) / 4) * 100}%`, backgroundColor: '#2563eb' }}
-                            />
-                          </div>
-                        </div>
                       </div>
                     </div>
                   )}
