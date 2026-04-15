@@ -10,7 +10,7 @@ import MiPercepcionPage from './components/MiPercepcionPage';
 import { isEval360Hash, isPercepcionHash, isAutoPercepcionHash } from './utils/hashRoute';
 import { getPathFromLocationHash } from './utils/hashRoute';
 import { useEvaluationStore } from './context/EvaluationContext';
-import { BarChart3, Users, Grid3x3 as Grid3X3, ClipboardList, Eye, LayoutDashboard, Star, TrendingUp, ChevronUp, TrendingDown } from 'lucide-react';
+import { BarChart3, Users, Grid3x3 as Grid3X3, ClipboardList, Eye, LayoutDashboard, Star, TrendingUp, ChevronUp, TrendingDown, ThumbsUp, Target } from 'lucide-react';
 
 function isMiPercepcionHash(hash: string): boolean {
   const p = getPathFromLocationHash(hash);
