@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { BarChart3, Eye, Clock, X, Send, CheckCircle } from 'lucide-react';
+import { BarChart3, Eye, Clock, X, Send } from 'lucide-react';
 import { EMPLOYEES } from '../data/mockData';
 import { useUser } from '../context/UserContext';
 import Evaluation360View from './Evaluation360View';
 import Evaluation360Results from './Evaluation360Results';
 import PendingEvaluations360 from './PendingEvaluations360';
 
-type Eval360Tab = 'responder' | 'resultados' | 'pendientes';
+type Eval360Tab = 'resumen' | 'resultados' | 'pendientes';
 
 function Eval360EmployeeView({ employeeId }: { employeeId: string }) {
   const employee = EMPLOYEES.find(e => e.id === employeeId);
@@ -96,7 +96,7 @@ function Eval360EmployeeView({ employeeId }: { employeeId: string }) {
 
 function Eval360AdminView({ selectedEmployeeId, onSelectEmployee }: { selectedEmployeeId: string | null; onSelectEmployee: (id: string | null) => void }) {
   const employee = selectedEmployeeId ? EMPLOYEES.find(e => e.id === selectedEmployeeId) : null;
-  const [activeTab, setActiveTab] = useState<Eval360Tab>('responder');
+  const [activeTab, setActiveTab] = useState<Eval360Tab>('resumen');
 
   if (employee) {
     return (
@@ -140,18 +140,18 @@ function Eval360AdminView({ selectedEmployeeId, onSelectEmployee }: { selectedEm
             <div className="flex items-center overflow-x-auto">
               <button
                 type="button"
-                onClick={() => setActiveTab('responder')}
+                onClick={() => setActiveTab('resumen')}
                 className={`
                   flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors whitespace-nowrap
                   ${
-                    activeTab === 'responder'
+                    activeTab === 'resumen'
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-600 hover:text-gray-900'
                   }
                 `}
               >
-                <Send size={16} />
-                Asignar
+                <BarChart3 size={16} />
+                Resumen
               </button>
               <button
                 type="button"
@@ -187,7 +187,7 @@ function Eval360AdminView({ selectedEmployeeId, onSelectEmployee }: { selectedEm
           </div>
 
           <div className="p-6">
-            {activeTab === 'responder' && <Evaluation360View />}
+            {activeTab === 'resumen' && <Evaluation360View />}
             {activeTab === 'resultados' && <Evaluation360Results />}
             {activeTab === 'pendientes' && <PendingEvaluations360 />}
           </div>
@@ -237,14 +237,11 @@ function Eval360AdminView({ selectedEmployeeId, onSelectEmployee }: { selectedEm
 
 export default function Evaluation360Page() {
   const { isAdmin, currentEmployee } = useUser();
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
 
   if (!isAdmin && currentEmployee) {
     return <Eval360EmployeeView employeeId={currentEmployee.id} />;
   }
 
-  if (isAdmin && currentEmployee) {
-    return <Eval360AdminView selectedEmployeeId={currentEmployee.id} onSelectEmployee={() => {}} />;
-  }
-
-  return null;
+  return <Eval360AdminView selectedEmployeeId={selectedEmployeeId} onSelectEmployee={setSelectedEmployeeId} />;
 }
