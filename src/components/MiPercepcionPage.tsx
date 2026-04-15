@@ -4,7 +4,7 @@ import { BOX_CONFIGS } from '../data/mockData';
 import { useEvaluationStore } from '../context/EvaluationContext';
 import { deriveBoxFromPerceptions, deriveBoxFromAutoPercepcion } from '../utils/evaluationDerivation';
 import { effectiveLocationHash } from '../utils/hashRoute';
-import { Eye, User, UserX, CheckCircle, TrendingUp, BarChart3 } from 'lucide-react';
+import { Eye, User, UserX, CheckCircle, TrendingUp, BarChart3, ClipboardList, ChevronRight, AlertCircle } from 'lucide-react';
 import type { PerceptionPlacement } from '../types/evaluation';
 import type { PerformanceLevel, PotentialLevel } from '../types';
 
@@ -230,9 +230,17 @@ interface MiPercepcionPageProps {
 export default function MiPercepcionPage({ routeHash }: MiPercepcionPageProps) {
   const fullHash = effectiveLocationHash(routeHash);
   const employeeId = useMemo(() => parseEmployeeIdFromHash(fullHash), [fullHash]);
-  const { percepcion, autoPercepcion } = useEvaluationStore();
+  const { percepcion, autoPercepcion, assignments } = useEvaluationStore();
   const employee = EMPLOYEES.find((e) => e.id === employeeId);
   const [activeTab, setActiveTab] = useState<'percepcion' | 'auto' | 'brecha'>('percepcion');
+
+  const pendingAssignments = useMemo(() => {
+    if (!employeeId) return [];
+    return assignments
+      .filter((a) => a.evaluatorId === employeeId && !a.completedAt)
+      .map((a) => ({ ...a, target: EMPLOYEES.find((e) => e.id === a.targetId) }))
+      .filter((a) => a.target !== undefined);
+  }, [assignments, employeeId]);
 
   if (!employeeId || !employee) {
     return (
@@ -277,6 +285,49 @@ export default function MiPercepcionPage({ routeHash }: MiPercepcionPageProps) {
             <p className="text-xs text-gray-500">{employee.name} · {employee.position}</p>
           </div>
         </div>
+
+        {pendingAssignments.length > 0 && (
+          <div className="bg-white rounded-2xl border border-amber-200 shadow-sm p-5 mb-5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                <AlertCircle size={14} className="text-amber-600" />
+              </div>
+              <h3 className="text-sm font-bold text-gray-900">Evaluaciones pendientes</h3>
+              <span className="ml-auto text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                {pendingAssignments.length}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+              RRHH te asignó evaluar a los siguientes colaboradores en la matriz 9-Box.
+            </p>
+            <div className="space-y-2">
+              {pendingAssignments.map((a) => {
+                if (!a.target) return null;
+                const evalLink = `${window.location.origin}${window.location.pathname}#/eval-percepcion?employeeId=${a.target.id}&evaluatorName=${encodeURIComponent(employee?.name ?? '')}`;
+                return (
+                  <a
+                    key={`${a.evaluatorId}-${a.targetId}`}
+                    href={evalLink}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-100 transition-all group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-amber-200 flex items-center justify-center text-xs font-bold text-amber-800 shrink-0">
+                      {a.target.avatar}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-gray-800 truncate">{a.target.name}</div>
+                      <div className="text-[10px] text-gray-500 truncate">{a.target.position} · {a.target.department}</div>
+                    </div>
+                    <div className="flex items-center gap-1 text-amber-600 shrink-0">
+                      <ClipboardList size={13} />
+                      <span className="text-[10px] font-semibold hidden sm:inline">Evaluar</span>
+                      <ChevronRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {!hasPercepcion && !hasAuto ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">

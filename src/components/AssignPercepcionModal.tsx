@@ -1,12 +1,8 @@
 import { useState, useMemo } from 'react';
 import { EMPLOYEES } from '../data/mockData';
-import { X, Search, Copy, CheckCircle, Users } from 'lucide-react';
+import { useEvaluationStore } from '../context/EvaluationContext';
+import { X, Search, CheckCircle, Users, UserCheck } from 'lucide-react';
 import type { Employee } from '../types';
-
-function buildHashLink(path: string, params: Record<string, string>): string {
-  const q = new URLSearchParams(params).toString();
-  return `${window.location.origin}${window.location.pathname}#${path}?${q}`;
-}
 
 interface AssignPercepcionModalProps {
   targetEmployee: Employee;
@@ -14,9 +10,9 @@ interface AssignPercepcionModalProps {
 }
 
 export default function AssignPercepcionModal({ targetEmployee, onClose }: AssignPercepcionModalProps) {
+  const { assignments, saveAssignment } = useEvaluationStore();
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<Employee | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [justAssigned, setJustAssigned] = useState<string | null>(null);
 
   const evaluators = useMemo(
     () =>
@@ -30,18 +26,15 @@ export default function AssignPercepcionModal({ targetEmployee, onClose }: Assig
     [search, targetEmployee.id]
   );
 
-  const link = selected
-    ? buildHashLink('/eval-percepcion', {
-        employeeId: targetEmployee.id,
-        evaluatorName: selected.name,
-      })
-    : null;
+  const pendingForTarget = useMemo(
+    () => new Set(assignments.filter((a) => a.targetId === targetEmployee.id && !a.completedAt).map((a) => a.evaluatorId)),
+    [assignments, targetEmployee.id]
+  );
 
-  const copy = () => {
-    if (!link) return;
-    void navigator.clipboard.writeText(link);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+  const assign = (evaluator: Employee) => {
+    saveAssignment(evaluator.id, targetEmployee.id);
+    setJustAssigned(evaluator.id);
+    setTimeout(() => setJustAssigned(null), 2000);
   };
 
   return (
@@ -68,83 +61,67 @@ export default function AssignPercepcionModal({ targetEmployee, onClose }: Assig
 
         <div className="p-5 space-y-4">
           <p className="text-xs text-gray-600 leading-relaxed">
-            Selecciona quién va a evaluar a <strong>{targetEmployee.name}</strong>. Se generará un enlace con el nombre del evaluador pre-llenado.
-            El evaluador puede editarlo si quiere o dejarlo como está.
+            Selecciona quién va a evaluar a <strong>{targetEmployee.name}</strong> en la matriz 9-Box. La evaluación aparecerá como tarea pendiente en su portal.
           </p>
 
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Buscar evaluador..."
+              placeholder="Buscar colaborador..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+          <div className="space-y-1.5 max-h-64 overflow-y-auto">
             {evaluators.length === 0 ? (
               <div className="text-center py-6 text-xs text-gray-400">Sin resultados</div>
             ) : (
-              evaluators.map((emp) => (
-                <button
-                  key={emp.id}
-                  type="button"
-                  onClick={() => setSelected(selected?.id === emp.id ? null : emp)}
-                  className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all ${
-                    selected?.id === emp.id
-                      ? 'bg-slate-800 text-white'
-                      : 'bg-gray-50 hover:bg-gray-100 text-gray-800'
-                  }`}
-                >
+              evaluators.map((emp) => {
+                const isPending = pendingForTarget.has(emp.id);
+                const wasJustAssigned = justAssigned === emp.id;
+
+                return (
                   <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
-                      selected?.id === emp.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                    key={emp.id}
+                    className={`flex items-center gap-3 p-2.5 rounded-xl transition-all ${
+                      isPending ? 'bg-teal-50 border border-teal-100' : 'bg-gray-50'
                     }`}
                   >
-                    {emp.avatar}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-xs font-semibold truncate ${selected?.id === emp.id ? 'text-white' : 'text-gray-800'}`}>
-                      {emp.name}
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
+                      {emp.avatar}
                     </div>
-                    <div className={`text-[10px] truncate ${selected?.id === emp.id ? 'text-white/70' : 'text-gray-400'}`}>
-                      {emp.position} · {emp.department}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-gray-800 truncate">{emp.name}</div>
+                      <div className="text-[10px] text-gray-400 truncate">{emp.position} · {emp.department}</div>
                     </div>
+
+                    {isPending ? (
+                      <div className="flex items-center gap-1 text-teal-600 shrink-0">
+                        <UserCheck size={14} />
+                        <span className="text-[10px] font-bold">Asignado</span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => assign(emp)}
+                        className={`shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          wasJustAssigned
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-slate-800 text-white hover:bg-slate-700'
+                        }`}
+                      >
+                        {wasJustAssigned ? <CheckCircle size={12} /> : <UserCheck size={12} />}
+                        {wasJustAssigned ? 'Listo' : 'Asignar'}
+                      </button>
+                    )}
                   </div>
-                  {selected?.id === emp.id && <CheckCircle size={15} className="text-white shrink-0" />}
-                </button>
-              ))
+                );
+              })
             )}
           </div>
-
-          {selected && link && (
-            <div className="bg-teal-50 border border-teal-100 rounded-xl p-4 space-y-2">
-              <p className="text-xs font-bold text-teal-800">
-                Enlace para <span className="font-black">{selected.name}</span>
-              </p>
-              <p className="text-[10px] text-teal-700 leading-relaxed">
-                Al abrir este enlace, el nombre "{selected.name}" estará pre-llenado. Puede modificarlo o dejarlo anónimo.
-              </p>
-              <code className="text-[10px] text-teal-800 break-all bg-white px-2 py-1.5 rounded-lg border border-teal-100 block leading-relaxed">
-                {link}
-              </code>
-              <button
-                type="button"
-                onClick={copy}
-                className={`w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
-                  copied ? 'bg-emerald-600 text-white' : 'bg-teal-600 text-white hover:bg-teal-700'
-                }`}
-              >
-                {copied ? <><CheckCircle size={15} /> Copiado!</> : <><Copy size={15} /> Copiar enlace</>}
-              </button>
-            </div>
-          )}
-
-          {!selected && (
-            <p className="text-xs text-gray-400 text-center">Selecciona un evaluador para generar el enlace</p>
-          )}
         </div>
 
         <div className="px-5 pb-5">

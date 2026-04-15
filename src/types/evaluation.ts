@@ -42,8 +42,16 @@ export interface PerceptionPlacement {
 
 export const STORAGE_KEY = 'ninebox-evaluations-v2';
 
+export interface PercepcionAssignment {
+  evaluatorId: string;
+  targetId: string;
+  assignedAt: string;
+  completedAt?: string;
+}
+
 export interface EvaluationStorage {
   threeSixty: Record<string, Employee360Data>;
   percepcion: Record<string, PerceptionPlacement[]>;
   autoPercepcion: Record<string, PerceptionPlacement>;
+  assignments: PercepcionAssignment[];
 }

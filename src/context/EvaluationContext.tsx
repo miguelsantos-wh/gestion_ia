@@ -8,21 +8,22 @@ import {
   type ReactNode,
 } from 'react';
 import type { PerformanceLevel, PotentialLevel } from '../types';
-import type { Employee360Data, EvaluationStorage, PeerSubmission, PerceptionPlacement } from '../types/evaluation';
+import type { Employee360Data, EvaluationStorage, PeerSubmission, PerceptionPlacement, PercepcionAssignment } from '../types/evaluation';
 import { STORAGE_KEY } from '../types/evaluation';
 
 function loadStorage(): EvaluationStorage {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { threeSixty: {}, percepcion: {}, autoPercepcion: {} };
+    if (!raw) return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [] };
     const p = JSON.parse(raw) as EvaluationStorage;
     return {
       threeSixty: p.threeSixty ?? {},
       percepcion: p.percepcion ?? {},
       autoPercepcion: p.autoPercepcion ?? {},
+      assignments: p.assignments ?? [],
     };
   } catch {
-    return { threeSixty: {}, percepcion: {}, autoPercepcion: {} };
+    return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [] };
   }
 }
 
@@ -30,6 +31,7 @@ interface EvaluationContextValue {
   threeSixty: Record<string, Employee360Data>;
   percepcion: Record<string, PerceptionPlacement[]>;
   autoPercepcion: Record<string, PerceptionPlacement>;
+  assignments: PercepcionAssignment[];
   saveSelfEvaluation: (employeeId: string, scores: number[]) => void;
   savePeerEvaluation: (employeeId: string, evaluatorName: string, scores: number[]) => void;
   savePerceptionPlacement: (
@@ -44,6 +46,8 @@ interface EvaluationContextValue {
     performanceLevel: PerformanceLevel,
     potentialLevel: PotentialLevel
   ) => void;
+  saveAssignment: (evaluatorId: string, targetId: string) => void;
+  markAssignmentComplete: (evaluatorId: string, targetId: string) => void;
   resetAll: () => void;
 }
 
@@ -158,8 +162,49 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
     [persist]
   );
 
+  const saveAssignment = useCallback(
+    (evaluatorId: string, targetId: string) => {
+      setStore((prev) => {
+        const alreadyExists = prev.assignments.some(
+          (a) => a.evaluatorId === evaluatorId && a.targetId === targetId && !a.completedAt
+        );
+        if (alreadyExists) return prev;
+        const assignment: PercepcionAssignment = {
+          evaluatorId,
+          targetId,
+          assignedAt: new Date().toISOString(),
+        };
+        const next: EvaluationStorage = {
+          ...prev,
+          assignments: [...prev.assignments, assignment],
+        };
+        persist(next);
+        return next;
+      });
+    },
+    [persist]
+  );
+
+  const markAssignmentComplete = useCallback(
+    (evaluatorId: string, targetId: string) => {
+      setStore((prev) => {
+        const next: EvaluationStorage = {
+          ...prev,
+          assignments: prev.assignments.map((a) =>
+            a.evaluatorId === evaluatorId && a.targetId === targetId && !a.completedAt
+              ? { ...a, completedAt: new Date().toISOString() }
+              : a
+          ),
+        };
+        persist(next);
+        return next;
+      });
+    },
+    [persist]
+  );
+
   const resetAll = useCallback(() => {
-    const empty: EvaluationStorage = { threeSixty: {}, percepcion: {}, autoPercepcion: {} };
+    const empty: EvaluationStorage = { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [] };
     persist(empty);
     setStore(empty);
   }, [persist]);
@@ -169,13 +214,28 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
       threeSixty: store.threeSixty,
       percepcion: store.percepcion,
       autoPercepcion: store.autoPercepcion,
+      assignments: store.assignments,
       saveSelfEvaluation,
       savePeerEvaluation,
       savePerceptionPlacement,
       saveAutoPercepcion,
+      saveAssignment,
+      markAssignmentComplete,
       resetAll,
     }),
-    [store.threeSixty, store.percepcion, store.autoPercepcion, saveSelfEvaluation, savePeerEvaluation, savePerceptionPlacement, saveAutoPercepcion, resetAll]
+    [
+      store.threeSixty,
+      store.percepcion,
+      store.autoPercepcion,
+      store.assignments,
+      saveSelfEvaluation,
+      savePeerEvaluation,
+      savePerceptionPlacement,
+      saveAutoPercepcion,
+      saveAssignment,
+      markAssignmentComplete,
+      resetAll,
+    ]
   );
 
   return <EvaluationContext.Provider value={value}>{children}</EvaluationContext.Provider>;

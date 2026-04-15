@@ -7,7 +7,7 @@ import {
 } from '../utils/evaluationDerivation';
 import PercepcionResultsView from './PercepcionResultsView';
 import AssignPercepcionModal from './AssignPercepcionModal';
-import { Search, Users, Eye, User, Link2, ChevronRight, X, Copy, BarChart2, UserX } from 'lucide-react';
+import { Search, Users, Eye, User, Link2, ChevronRight, X, Copy, BarChart2, UserX, UserCheck, AlertCircle } from 'lucide-react';
 import type { Employee } from '../types';
 import type { PerceptionPlacement } from '../types/evaluation';
 import type { PerformanceLevel, PotentialLevel } from '../types';
@@ -245,7 +245,7 @@ function EmployeeCard({ employee, onSelect, isSelected }: EmployeeCardProps) {
 type DetailTab = 'resultados' | 'enlaces' | 'asignar';
 
 function EmployeeDetailPanel({ employee, onClose }: { employee: Employee; onClose: () => void }) {
-  const { percepcion, autoPercepcion } = useEvaluationStore();
+  const { percepcion, autoPercepcion, assignments } = useEvaluationStore();
   const percList = percepcion[employee.id] ?? [];
   const autoPerc = autoPercepcion[employee.id];
   const derived = deriveBoxFromPerceptions(percList);
@@ -435,45 +435,55 @@ function EmployeeDetailPanel({ employee, onClose }: { employee: Employee; onClos
           </div>
         )}
 
-        {activeTab === 'asignar' && (
-          <div className="space-y-3">
-            <p className="text-xs text-gray-600 leading-relaxed">
-              Asigna a un empleado específico para que evalúe a <strong>{employee.name}</strong> en la matriz 9-Box.
-              También puedes copiar el enlace genérico para enviar a quien quieras (con nombre opcional).
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowAssignModal(true)}
-              className="w-full py-3 rounded-xl bg-slate-800 text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-slate-700 transition-colors"
-            >
-              <Users size={16} />
-              Asignar evaluador interno
-            </button>
+        {activeTab === 'asignar' && (() => {
+          const pendingEvaluators = assignments.filter(
+            (a) => a.targetId === employee.id && !a.completedAt
+          ).map((a) => ({ ...a, evaluator: EMPLOYEES.find((e) => e.id === a.evaluatorId) })).filter((a) => a.evaluator);
 
-            <div className="bg-gray-50 rounded-xl border border-gray-100 p-3">
-              <div className="flex items-center gap-1.5 mb-2">
-                <Link2 size={13} className="text-teal-600" />
-                <span className="text-xs font-bold text-gray-700">Enlace abierto (anónimo opcional)</span>
-              </div>
-              <p className="text-[10px] text-gray-400 mb-2 leading-relaxed">
-                Cualquier persona puede usar este enlace. El nombre del evaluador es opcional.
+          return (
+            <div className="space-y-3">
+              <p className="text-xs text-gray-600 leading-relaxed">
+                Asigna a un colaborador para que evalúe a <strong>{employee.name}</strong> en la matriz 9-Box. La evaluación aparecerá como tarea pendiente en su portal.
               </p>
-              <div className="flex gap-2">
-                <code className="flex-1 text-[10px] text-gray-500 break-all bg-white px-2 py-1.5 rounded-lg border border-gray-100">
-                  {percLink}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => copy(percLink, 'perc-asignar')}
-                  className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-teal-600 text-white text-xs font-semibold"
-                >
-                  <Copy size={11} />
-                  {copied === 'perc-asignar' ? 'OK' : 'Copiar'}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowAssignModal(true)}
+                className="w-full py-3 rounded-xl bg-slate-800 text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-slate-700 transition-colors"
+              >
+                <Users size={16} />
+                Asignar evaluador
+              </button>
+
+              {pendingEvaluators.length > 0 && (
+                <div className="bg-amber-50 rounded-xl border border-amber-100 p-3">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <AlertCircle size={13} className="text-amber-600" />
+                    <span className="text-xs font-bold text-amber-800">Evaluadores asignados pendientes</span>
+                    <span className="ml-auto text-[10px] font-bold text-amber-600 bg-amber-100 rounded-full px-1.5 py-0.5">
+                      {pendingEvaluators.length}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {pendingEvaluators.map((a) => (
+                      <div key={`${a.evaluatorId}-${a.targetId}`} className="flex items-center gap-2 bg-white rounded-lg p-2 border border-amber-100">
+                        <div className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600 shrink-0">
+                          {a.evaluator!.avatar}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[11px] font-semibold text-gray-800 truncate">{a.evaluator!.name}</div>
+                          <div className="text-[9px] text-gray-400">
+                            Asignado {new Date(a.assignedAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}
+                          </div>
+                        </div>
+                        <UserCheck size={12} className="text-amber-500 shrink-0" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {showAssignModal && (
