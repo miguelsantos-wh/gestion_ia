@@ -10,6 +10,7 @@ import PublicAutoPercepcionPage from './components/PublicAutoPercepcionPage';
 import MiPercepcionPage from './components/MiPercepcionPage';
 import { isEval360Hash, isPercepcionHash, isAutoPercepcionHash } from './utils/hashRoute';
 import { getPathFromLocationHash } from './utils/hashRoute';
+import { UserProvider } from './context/UserContext';
 
 function isMiPercepcionHash(hash: string): boolean {
   const p = getPathFromLocationHash(hash);
@@ -78,5 +79,9 @@ export default function App() {
     return <MiPercepcionPage key={hash || 'misresultados'} routeHash={hash} />;
   }
 
-  return <MainApp />;
+  return (
+    <UserProvider>
+      <MainApp />
+    </UserProvider>
+  );
 }

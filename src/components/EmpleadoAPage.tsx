@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BarChart3, Users, Grid3x3, Eye, X } from 'lucide-react';
 import { EMPLOYEES } from '../data/mockData';
+import { useUser } from '../context/UserContext';
 import OverviewView from './OverviewView';
 import EmployeeAdminPanel from './EmployeeAdminPanel';
 import IndividualView from './IndividualView';
@@ -14,11 +15,13 @@ const TABS: { id: EmpleadoATab; label: string; icon: React.ReactNode }[] = [
   { id: 'resultados', label: 'Resultados', icon: <Eye size={16} /> },
 ];
 
-function EmployeeProfile({ employeeId, onClose }: { employeeId: string; onClose: () => void }) {
+function EmployeeProfile({ employeeId, onClose, canEdit }: { employeeId: string; onClose?: () => void; canEdit: boolean }) {
   const employee = EMPLOYEES.find(e => e.id === employeeId);
   if (!employee) return null;
 
   const [activeTab, setActiveTab] = useState<EmpleadoATab>('resumen');
+
+  const displayTabs = canEdit ? TABS : TABS.filter(t => t.id !== 'colaboradores' && t.id !== 'matriz');
 
   return (
     <div className="space-y-6">
@@ -34,19 +37,21 @@ function EmployeeProfile({ employeeId, onClose }: { employeeId: string; onClose:
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <X size={20} className="text-gray-600" />
-        </button>
+        {canEdit && onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X size={20} className="text-gray-600" />
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
         <div className="border-b border-gray-100">
           <div className="flex items-center overflow-x-auto">
-            {TABS.map((tab) => (
+            {displayTabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
@@ -69,8 +74,8 @@ function EmployeeProfile({ employeeId, onClose }: { employeeId: string; onClose:
 
         <div className="p-6">
           {activeTab === 'resumen' && <OverviewView />}
-          {activeTab === 'colaboradores' && <EmployeeAdminPanel view="empleados" />}
-          {activeTab === 'matriz' && <IndividualView employees={EMPLOYEES} />}
+          {canEdit && activeTab === 'colaboradores' && <EmployeeAdminPanel view="empleados" />}
+          {canEdit && activeTab === 'matriz' && <IndividualView employees={EMPLOYEES} />}
           {activeTab === 'resultados' && <EmployeeAdminPanel view="resultados" />}
         </div>
       </div>
@@ -79,10 +84,15 @@ function EmployeeProfile({ employeeId, onClose }: { employeeId: string; onClose:
 }
 
 export default function EmpleadoAPage() {
+  const { isAdmin, currentEmployee } = useUser();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
 
-  if (selectedEmployeeId) {
-    return <EmployeeProfile employeeId={selectedEmployeeId} onClose={() => setSelectedEmployeeId(null)} />;
+  if (!isAdmin && currentEmployee) {
+    return <EmployeeProfile employeeId={currentEmployee.id} canEdit={false} />;
+  }
+
+  if (isAdmin && selectedEmployeeId) {
+    return <EmployeeProfile employeeId={selectedEmployeeId} onClose={() => setSelectedEmployeeId(null)} canEdit={true} />;
   }
 
   return (

@@ -1,21 +1,16 @@
 import { useState } from 'react';
 import { Clock, Eye, X } from 'lucide-react';
 import { EMPLOYEES } from '../data/mockData';
+import { useUser } from '../context/UserContext';
 import PendingAciertosDesaciertos from './PendingAciertosDesaciertos';
 
-type AciertosTab = 'resumen' | 'pendientes' | 'resultados';
+type AciertosTab = 'pendientes' | 'resultados';
 
-const TABS: { id: AciertosTab; label: string; icon: React.ReactNode }[] = [
-  { id: 'resumen', label: 'Resumen', icon: <Eye size={16} /> },
-  { id: 'pendientes', label: 'Evaluaciones Pendientes', icon: <Clock size={16} /> },
-  { id: 'resultados', label: 'Resultados', icon: <Eye size={16} /> },
-];
-
-function AciertosProfileView({ employeeId, onClose }: { employeeId: string; onClose: () => void }) {
+function AciertosProfileView({ employeeId, onClose, canEdit }: { employeeId: string; onClose?: () => void; canEdit: boolean }) {
   const employee = EMPLOYEES.find(e => e.id === employeeId);
   if (!employee) return null;
 
-  const [activeTab, setActiveTab] = useState<Exclude<AciertosTab, 'resumen'>>('pendientes');
+  const [activeTab, setActiveTab] = useState<AciertosTab>('pendientes');
 
   return (
     <div className="space-y-6">
@@ -29,13 +24,15 @@ function AciertosProfileView({ employeeId, onClose }: { employeeId: string; onCl
             <p className="text-sm text-gray-600">{employee.position} · {employee.department}</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <X size={20} className="text-gray-600" />
-        </button>
+        {canEdit && onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X size={20} className="text-gray-600" />
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -103,10 +100,15 @@ function AciertosProfileView({ employeeId, onClose }: { employeeId: string; onCl
 }
 
 export default function AciertosDesaciertosPage() {
+  const { isAdmin, currentEmployee } = useUser();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
 
-  if (selectedEmployeeId) {
-    return <AciertosProfileView employeeId={selectedEmployeeId} onClose={() => setSelectedEmployeeId(null)} />;
+  if (!isAdmin && currentEmployee) {
+    return <AciertosProfileView employeeId={currentEmployee.id} canEdit={false} />;
+  }
+
+  if (isAdmin && selectedEmployeeId) {
+    return <AciertosProfileView employeeId={selectedEmployeeId} onClose={() => setSelectedEmployeeId(null)} canEdit={true} />;
   }
 
   return (
