@@ -1,191 +1,162 @@
-import { CheckCircle2, Clock, Users } from 'lucide-react';
-import { EMPLOYEES } from '../data/mockData';
+import { CheckCircle2, Clock, User, Briefcase, Equal, UserCheck, Globe, Users } from 'lucide-react';
+import { useEvaluationStore } from '../context/EvaluationContext';
+import type { Eval360Role } from '../types/evaluation';
+import { EVAL_360_ROLE_LABELS } from '../types/evaluation';
 
-interface EvaluationAssignment {
-  id: string;
-  evaluatedEmployee: string;
-  evaluatedPosition: string;
-  autoEvaluation: boolean;
-  leaderEvaluation: string | null;
-  peerEvaluation: string | null;
-  collaboratorEvaluation: string | null;
-  clientEvaluation: string | null;
-  status: 'pending' | 'completed' | 'partial';
+const ROLE_ICONS: Record<Eval360Role, React.ReactNode> = {
+  self: <User size={12} />,
+  leader: <Briefcase size={12} />,
+  peer: <Equal size={12} />,
+  collaborator: <UserCheck size={12} />,
+  client: <Globe size={12} />,
+  anonymous: <Users size={12} />,
+};
+
+const ROLE_COLORS: Record<Eval360Role, string> = {
+  self: '#2563eb',
+  leader: '#0d9488',
+  peer: '#7c3aed',
+  collaborator: '#d97706',
+  client: '#dc2626',
+  anonymous: '#64748b',
+};
+
+interface PendingEvaluations360Props {
+  employeeId: string;
 }
 
-const MOCK_EVALUATIONS: EvaluationAssignment[] = [
-  {
-    id: '1',
-    evaluatedEmployee: 'Empleado A',
-    evaluatedPosition: 'Gerente de Ventas',
-    autoEvaluation: true,
-    leaderEvaluation: 'Juan García',
-    peerEvaluation: 'María López',
-    collaboratorEvaluation: null,
-    clientEvaluation: 'Cliente X',
-    status: 'partial',
-  },
-  {
-    id: '2',
-    evaluatedEmployee: 'Empleado B',
-    evaluatedPosition: 'Asistente Administrativo',
-    autoEvaluation: false,
-    leaderEvaluation: 'Carlos Rodríguez',
-    peerEvaluation: null,
-    collaboratorEvaluation: 'Ana Martínez',
-    clientEvaluation: null,
-    status: 'pending',
-  },
-  {
-    id: '3',
-    evaluatedEmployee: 'Empleado C',
-    evaluatedPosition: 'Especialista en Marketing',
-    autoEvaluation: true,
-    leaderEvaluation: 'Laura Fernández',
-    peerEvaluation: 'David Sánchez',
-    collaboratorEvaluation: 'Patricia Gómez',
-    clientEvaluation: 'Cliente Y',
-    status: 'completed',
-  },
-];
+export default function PendingEvaluations360({ employeeId }: PendingEvaluations360Props) {
+  const { eval360Assignments } = useEvaluationStore();
+  const assignments = eval360Assignments.filter(a => a.targetEmployeeId === employeeId);
 
-function getStatusColor(status: string): string {
-  if (status === 'completed') return 'bg-green-50 border-green-100';
-  if (status === 'partial') return 'bg-yellow-50 border-yellow-100';
-  return 'bg-red-50 border-red-100';
-}
+  const completed = assignments.filter(a => a.completedAt).length;
+  const pending = assignments.filter(a => !a.completedAt).length;
 
-function getStatusLabel(status: string): string {
-  if (status === 'completed') return 'Completada';
-  if (status === 'partial') return 'Parcial';
-  return 'Pendiente';
-}
+  const byRole: Record<Eval360Role, typeof assignments> = {
+    self: assignments.filter(a => a.role === 'self'),
+    leader: assignments.filter(a => a.role === 'leader'),
+    peer: assignments.filter(a => a.role === 'peer'),
+    collaborator: assignments.filter(a => a.role === 'collaborator'),
+    client: assignments.filter(a => a.role === 'client'),
+    anonymous: assignments.filter(a => a.role === 'anonymous'),
+  };
 
-function getStatusIcon(status: string) {
-  if (status === 'completed') return <CheckCircle2 size={16} className="text-green-600" />;
-  if (status === 'partial') return <Clock size={16} className="text-yellow-600" />;
-  return <Clock size={16} className="text-red-600" />;
-}
+  if (assignments.length === 0) {
+    return (
+      <div className="text-center py-10 bg-gray-50 rounded-2xl border border-gray-100">
+        <Clock size={24} className="text-gray-300 mx-auto mb-2" />
+        <p className="text-sm font-semibold text-gray-400">Sin evaluadores asignados</p>
+        <p className="text-xs text-gray-400 mt-1">Ve a la pestaña "Asignar" para agregar evaluadores.</p>
+      </div>
+    );
+  }
 
-export default function PendingEvaluations360() {
   return (
     <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-green-50 rounded-xl border border-green-100 p-3 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
+            <CheckCircle2 size={15} className="text-green-600" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-green-900">Completadas</p>
+            <p className="text-xl font-black text-green-600">{completed}</p>
+          </div>
+        </div>
+        <div className="bg-amber-50 rounded-xl border border-amber-100 p-3 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+            <Clock size={15} className="text-amber-600" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-amber-900">Pendientes</p>
+            <p className="text-xl font-black text-amber-600">{pending}</p>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-100">
+          <p className="text-xs font-bold text-gray-700">Matriz de seguimiento</p>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700">Colaborador Evaluado</th>
-                <th className="px-5 py-3 text-center text-xs font-semibold text-gray-700">Autoevaluación</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700">Evaluación por Líder</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700">Evaluación Colaborador</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700">Evaluación Par</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700">Evaluación Cliente</th>
-                <th className="px-5 py-3 text-center text-xs font-semibold text-gray-700">Estatus</th>
+              <tr className="border-b border-gray-100">
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600">Evaluador</th>
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600">Rol</th>
+                <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-600">Estatus</th>
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600">Fecha</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {MOCK_EVALUATIONS.map((evaluation) => (
-                <tr key={evaluation.id} className={`${getStatusColor(evaluation.status)} border-transparent`}>
-                  <td className="px-5 py-4">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">{evaluation.evaluatedEmployee}</div>
-                      <div className="text-xs text-gray-500">{evaluation.evaluatedPosition}</div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 text-center">
-                    {evaluation.autoEvaluation ? (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
-                        <CheckCircle2 size={14} />
-                        Completada
+            <tbody className="divide-y divide-gray-50">
+              {assignments.map((a) => {
+                const color = ROLE_COLORS[a.role];
+                return (
+                  <tr key={a.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: color }}>
+                          {a.isAnonymous ? '?' : a.evaluatorName.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-xs font-medium text-gray-800 truncate max-w-[120px]">
+                          {a.isAnonymous ? 'Anónimo' : a.evaluatorName}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <span style={{ color }}>{ROLE_ICONS[a.role]}</span>
+                        <span className="text-[10px] font-semibold text-gray-600">{EVAL_360_ROLE_LABELS[a.role]}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {a.completedAt ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-semibold">
+                          <CheckCircle2 size={10} /> Completada
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold">
+                          <Clock size={10} /> Pendiente
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-[10px] text-gray-400">
+                        {a.completedAt
+                          ? new Date(a.completedAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })
+                          : new Date(a.assignedAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}
                       </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
-                        <Clock size={14} />
-                        Pendiente
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-4">
-                    {evaluation.leaderEvaluation ? (
-                      <span className="text-sm text-gray-700">{evaluation.leaderEvaluation}</span>
-                    ) : (
-                      <span className="text-sm text-gray-400">No asignada</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-4">
-                    {evaluation.collaboratorEvaluation ? (
-                      <span className="text-sm text-gray-700">{evaluation.collaboratorEvaluation}</span>
-                    ) : (
-                      <span className="text-sm text-gray-400">No asignada</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-4">
-                    {evaluation.peerEvaluation ? (
-                      <span className="text-sm text-gray-700">{evaluation.peerEvaluation}</span>
-                    ) : (
-                      <span className="text-sm text-gray-400">No asignada</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-4">
-                    {evaluation.clientEvaluation ? (
-                      <span className="text-sm text-gray-700">{evaluation.clientEvaluation}</span>
-                    ) : (
-                      <span className="text-sm text-gray-400">No asignada</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-4 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      {getStatusIcon(evaluation.status)}
-                      <span className="text-xs font-medium text-gray-700">{getStatusLabel(evaluation.status)}</span>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-green-50 rounded-xl border border-green-100 p-4">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
-              <CheckCircle2 size={18} className="text-green-600" />
+      <div className="space-y-2">
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Por tipo de evaluador</p>
+        {(Object.entries(byRole) as [Eval360Role, typeof assignments][]).map(([role, list]) => {
+          if (list.length === 0) return null;
+          const doneCount = list.filter(a => a.completedAt).length;
+          const color = ROLE_COLORS[role];
+          return (
+            <div key={role} className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
+              <span style={{ color }}>{ROLE_ICONS[role]}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-gray-700">{EVAL_360_ROLE_LABELS[role]}</p>
+                <p className="text-[10px] text-gray-400">{list.map(a => a.isAnonymous ? 'Anónimo' : a.evaluatorName).join(', ')}</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                  <div className="h-1.5 rounded-full transition-all" style={{ width: `${(doneCount / list.length) * 100}%`, backgroundColor: color }} />
+                </div>
+                <span className="text-[10px] font-bold w-8 text-right" style={{ color }}>{doneCount}/{list.length}</span>
+              </div>
             </div>
-            <div>
-              <div className="text-xs font-semibold text-green-900 mb-1">Completadas</div>
-              <div className="text-2xl font-bold text-green-600">1</div>
-              <div className="text-xs text-green-600 mt-0.5">Todas las evaluaciones realizadas</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-yellow-50 rounded-xl border border-yellow-100 p-4">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center shrink-0">
-              <Clock size={18} className="text-yellow-600" />
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-yellow-900 mb-1">Parciales</div>
-              <div className="text-2xl font-bold text-yellow-600">1</div>
-              <div className="text-xs text-yellow-600 mt-0.5">Algunas evaluaciones pendientes</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-red-50 rounded-xl border border-red-100 p-4">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
-              <Clock size={18} className="text-red-600" />
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-red-900 mb-1">Pendientes</div>
-              <div className="text-2xl font-bold text-red-600">1</div>
-              <div className="text-xs text-red-600 mt-0.5">Todas las evaluaciones por hacer</div>
-            </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
     </div>
   );

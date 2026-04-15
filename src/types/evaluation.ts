@@ -49,9 +49,33 @@ export interface PercepcionAssignment {
   completedAt?: string;
 }
 
+export type Eval360Role = 'self' | 'leader' | 'peer' | 'collaborator' | 'client' | 'anonymous';
+
+export const EVAL_360_ROLE_LABELS: Record<Eval360Role, string> = {
+  self: 'Autoevaluación',
+  leader: 'Evaluación por Líder',
+  peer: 'Evaluación por Par',
+  collaborator: 'Evaluación por Colaborador',
+  client: 'Evaluación por Cliente',
+  anonymous: 'Evaluación Anónima',
+};
+
+export interface Eval360Assignment {
+  id: string;
+  targetEmployeeId: string;
+  role: Eval360Role;
+  evaluatorName: string;
+  evaluatorEmployeeId?: string;
+  isAnonymous: boolean;
+  assignedAt: string;
+  completedAt?: string;
+  scores?: number[];
+}
+
 export interface EvaluationStorage {
   threeSixty: Record<string, Employee360Data>;
   percepcion: Record<string, PerceptionPlacement[]>;
   autoPercepcion: Record<string, PerceptionPlacement>;
   assignments: PercepcionAssignment[];
+  eval360Assignments: Eval360Assignment[];
 }
