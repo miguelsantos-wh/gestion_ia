@@ -10,21 +10,23 @@ import MiPercepcionPage from './components/MiPercepcionPage';
 import { isEval360Hash, isPercepcionHash, isAutoPercepcionHash } from './utils/hashRoute';
 import { getPathFromLocationHash } from './utils/hashRoute';
 import { useEvaluationStore } from './context/EvaluationContext';
-import { BarChart3, Users, Grid3x3 as Grid3X3, ClipboardList, Eye, Star, TrendingUp, ChevronUp, TrendingDown } from 'lucide-react';
+import { BarChart3, Users, Grid3x3 as Grid3X3, ClipboardList, Eye, Star, TrendingUp, ChevronUp, TrendingDown, ThumbsUp, Target } from 'lucide-react';
 
 function isMiPercepcionHash(hash: string): boolean {
   const p = getPathFromLocationHash(hash);
   return p === '/mis-resultados' || p.startsWith('/mis-resultados/');
 }
 
-type AdminView = 'overview' | 'empleados' | 'matriz' | 'resultados' | 'eval360';
+type AdminView = 'overview' | 'empleados' | 'matriz' | 'resultados' | 'eval360' | 'empleadoA' | 'aciertos';
 
 const ADMIN_TABS: { id: AdminView; label: string; icon: React.ReactNode }[] = [
   { id: 'overview', label: 'Resumen', icon: <BarChart3 size={15} /> },
   { id: 'empleados', label: 'Colaboradores', icon: <Users size={15} /> },
   { id: 'matriz', label: 'Matriz 9-Box', icon: <Grid3X3 size={15} /> },
   { id: 'resultados', label: 'Resultados', icon: <Eye size={15} /> },
+  { id: 'empleadoA', label: 'Empleado A', icon: <Users size={15} /> },
   { id: 'eval360', label: 'Evaluación 360', icon: <ClipboardList size={15} /> },
+  { id: 'aciertos', label: 'Aciertos y desaciertos', icon: <ThumbsUp size={15} /> },
 ];
 
 function StatCard({
@@ -175,7 +177,9 @@ const VIEW_TITLES: Record<AdminView, { title: string; sub: string }> = {
   empleados: { title: 'Colaboradores', sub: 'Fichas individuales con resultados, enlaces y asignación de evaluadores' },
   matriz: { title: 'Matriz 9-Box', sub: 'Visualiza la posición de los colaboradores según evaluaciones recibidas' },
   resultados: { title: 'Resultados de percepción', sub: 'Resumen de todas las percepciones externas y autoevaluaciones' },
+  empleadoA: { title: 'Empleado A', sub: 'Vista completa del sistema — todos los módulos disponibles' },
   eval360: { title: 'Evaluación 360', sub: 'Plantilla de cuestionario, enlaces y resultados 360' },
+  aciertos: { title: 'Aciertos y desaciertos', sub: 'Análisis de aciertos y desaciertos por colaborador' },
 };
 
 function MainApp() {
@@ -241,7 +245,40 @@ function MainApp() {
         {activeView === 'empleados' && <EmployeeAdminPanel view="empleados" />}
         {activeView === 'matriz' && <IndividualView employees={EMPLOYEES} />}
         {activeView === 'resultados' && <EmployeeAdminPanel view="resultados" />}
+        {activeView === 'empleadoA' && (
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Resumen</h4>
+              <OverviewView />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Colaboradores</h4>
+              <EmployeeAdminPanel view="empleados" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Matriz 9-Box</h4>
+              <IndividualView employees={EMPLOYEES} />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Resultados de percepción</h4>
+              <EmployeeAdminPanel view="resultados" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Evaluación 360</h4>
+              <Evaluation360View />
+            </div>
+          </div>
+        )}
         {activeView === 'eval360' && <Evaluation360View />}
+        {activeView === 'aciertos' && (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+              <Target size={28} className="text-gray-400" />
+            </div>
+            <h3 className="text-base font-bold text-gray-700 mb-2">Aciertos y desaciertos</h3>
+            <p className="text-sm text-gray-400 max-w-xs">Esta sección estará disponible próximamente.</p>
+          </div>
+        )}
       </main>
     </div>
   );
