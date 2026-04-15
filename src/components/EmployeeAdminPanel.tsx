@@ -7,8 +7,159 @@ import {
 } from '../utils/evaluationDerivation';
 import PercepcionResultsView from './PercepcionResultsView';
 import AssignPercepcionModal from './AssignPercepcionModal';
-import { Search, Users, Eye, User, Link2, ChevronRight, X, Copy, BarChart2 } from 'lucide-react';
+import { Search, Users, Eye, User, Link2, ChevronRight, X, Copy, BarChart2, UserX } from 'lucide-react';
 import type { Employee } from '../types';
+import type { PerceptionPlacement } from '../types/evaluation';
+import type { PerformanceLevel, PotentialLevel } from '../types';
+
+const PERF_ORDER: PerformanceLevel[] = ['low', 'medium', 'high'];
+const POT_ORDER: PotentialLevel[] = ['high', 'medium', 'low'];
+
+function VotesMatrix({
+  percList,
+  autoPerc,
+}: {
+  percList: PerceptionPlacement[];
+  autoPerc: PerceptionPlacement | undefined;
+}) {
+  const [hovered, setHovered] = useState<string | null>(null);
+
+  const grouped = useMemo(() => {
+    const map: Record<string, { cfg: typeof BOX_CONFIGS[0]; voters: { name: string; isAnon: boolean; isAuto: boolean }[] }> = {};
+    percList.forEach((pl) => {
+      const key = `${pl.performanceLevel}-${pl.potentialLevel}`;
+      const cfg = BOX_CONFIGS.find((b) => b.performanceLevel === pl.performanceLevel && b.potentialLevel === pl.potentialLevel);
+      if (!cfg) return;
+      if (!map[key]) map[key] = { cfg, voters: [] };
+      const isAnon = !pl.evaluatorName || pl.evaluatorName.trim() === '' || pl.evaluatorName === 'Anónimo';
+      map[key].voters.push({ name: pl.evaluatorName || 'Anónimo', isAnon, isAuto: false });
+    });
+    if (autoPerc) {
+      const key = `${autoPerc.performanceLevel}-${autoPerc.potentialLevel}`;
+      const cfg = BOX_CONFIGS.find((b) => b.performanceLevel === autoPerc.performanceLevel && b.potentialLevel === autoPerc.potentialLevel);
+      if (cfg) {
+        if (!map[key]) map[key] = { cfg, voters: [] };
+        map[key].voters.push({ name: 'Yo (autoevaluación)', isAnon: false, isAuto: true });
+      }
+    }
+    return map;
+  }, [percList, autoPerc]);
+
+  return (
+    <div>
+      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Votos en la matriz</p>
+      <div className="flex gap-2">
+        <div className="flex flex-col justify-around pr-1" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
+          {POT_ORDER.map((pot) => (
+            <div key={pot} className="text-[9px] text-gray-400 font-semibold text-right w-8 leading-none flex items-center justify-end" style={{ height: '64px' }}>
+              {pot === 'high' ? 'Alto' : pot === 'medium' ? 'Med' : 'Bajo'}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex-1">
+          <div className="grid grid-cols-3 gap-1">
+            {POT_ORDER.map((pot) =>
+              PERF_ORDER.map((perf) => {
+                const key = `${perf}-${pot}`;
+                const cfg = BOX_CONFIGS.find((b) => b.performanceLevel === perf && b.potentialLevel === pot)!;
+                const cell = grouped[key];
+                const isHovered = hovered === key;
+
+                return (
+                  <div
+                    key={key}
+                    className="relative rounded-xl border-2 transition-all duration-150 flex flex-col items-start justify-start p-1.5 cursor-default"
+                    style={{
+                      backgroundColor: cell ? cfg.bgColor : '#f9fafb',
+                      borderColor: cell ? cfg.color : '#e5e7eb',
+                      minHeight: '64px',
+                      boxShadow: isHovered && cell ? `0 0 0 2px ${cfg.color}60` : undefined,
+                    }}
+                    onMouseEnter={() => cell && setHovered(key)}
+                    onMouseLeave={() => setHovered(null)}
+                  >
+                    <div className="text-[9px] font-black mb-1 leading-none" style={{ color: cell ? cfg.textColor : '#d1d5db' }}>
+                      {cfg.code}
+                    </div>
+
+                    {cell && (
+                      <div className="flex flex-wrap gap-0.5">
+                        {cell.voters.map((v, vi) => (
+                          <div
+                            key={vi}
+                            title={v.name}
+                            className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shadow-sm border border-white"
+                            style={{
+                              backgroundColor: v.isAuto ? '#2563eb' : v.isAnon ? '#94a3b8' : cfg.color,
+                              color: 'white',
+                            }}
+                          >
+                            {v.isAuto ? (
+                              <User size={9} />
+                            ) : v.isAnon ? (
+                              <UserX size={9} />
+                            ) : (
+                              v.name.split(' ').map((n) => n[0]).slice(0, 2).join('')
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {isHovered && cell && (
+                      <div className="absolute bottom-full left-0 mb-1.5 z-20 bg-gray-900 text-white text-[10px] rounded-lg px-2.5 py-2 shadow-xl whitespace-nowrap max-w-[180px]">
+                        <div className="font-bold mb-1" style={{ color: cfg.bgColor }}>{cfg.code} · {cfg.label}</div>
+                        {cell.voters.map((v, vi) => (
+                          <div key={vi} className="flex items-center gap-1.5 py-0.5">
+                            {v.isAuto ? (
+                              <User size={9} className="text-blue-400 shrink-0" />
+                            ) : v.isAnon ? (
+                              <UserX size={9} className="text-gray-400 shrink-0" />
+                            ) : (
+                              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: cfg.color }} />
+                            )}
+                            <span className={v.isAnon && !v.isAuto ? 'text-gray-400 italic' : 'text-white'}>{v.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="flex justify-around mt-1">
+            {PERF_ORDER.map((perf) => (
+              <div key={perf} className="text-[9px] text-gray-400 font-semibold text-center flex-1">
+                {perf === 'high' ? 'Alto' : perf === 'medium' ? 'Med' : 'Bajo'}
+              </div>
+            ))}
+          </div>
+          <div className="text-[9px] text-gray-400 text-center mt-0.5">Resultados →</div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-3 mt-3">
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded-full bg-slate-400 flex items-center justify-center"><UserX size={8} className="text-white" /></div>
+          <span className="text-[10px] text-gray-500">Anónimo</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center"><User size={8} className="text-white" /></div>
+          <span className="text-[10px] text-gray-500">Autoevaluación</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded-full bg-gray-700 flex items-center justify-center">
+            <span className="text-[7px] text-white font-bold">AB</span>
+          </div>
+          <span className="text-[10px] text-gray-500">Evaluador nombrado</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function buildHashLink(path: string, params: Record<string, string>): string {
   const q = new URLSearchParams(params).toString();
@@ -232,35 +383,8 @@ function EmployeeDetailPanel({ employee, onClose }: { employee: Employee; onClos
               </div>
             </div>
 
-            {percList.length > 0 && (
-              <div>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Votos recibidos</p>
-                <div className="space-y-2">
-                  {percList.map((pl, i) => {
-                    const plcfg = BOX_CONFIGS.find((b) => b.performanceLevel === pl.performanceLevel && b.potentialLevel === pl.potentialLevel);
-                    return (
-                      <div key={`${pl.at}-${i}`} className="flex items-center gap-2 py-2 border-b border-gray-50 last:border-0">
-                        <div
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black text-white shrink-0"
-                          style={{ backgroundColor: plcfg?.color ?? '#94a3b8' }}
-                        >
-                          {plcfg?.code ?? '?'}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-medium text-gray-800">{pl.evaluatorName || 'Anónimo'}</div>
-                          <div className="text-[10px] text-gray-400">
-                            {new Date(pl.at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                        </div>
-                        <div className="text-[10px] text-right text-gray-500 shrink-0">
-                          <div>Res: <strong>{pl.performanceLevel === 'high' ? 'Alto' : pl.performanceLevel === 'medium' ? 'Medio' : 'Bajo'}</strong></div>
-                          <div>Val: <strong>{pl.potentialLevel === 'high' ? 'Alto' : pl.potentialLevel === 'medium' ? 'Medio' : 'Bajo'}</strong></div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+            {(percList.length > 0 || autoPerc) && (
+              <VotesMatrix percList={percList} autoPerc={autoPerc} />
             )}
 
             {percList.length > 0 && autoPerc && cfg && cfgAuto && (
