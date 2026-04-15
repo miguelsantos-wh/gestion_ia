@@ -236,12 +236,15 @@ function Eval360AdminView({ selectedEmployeeId, onSelectEmployee }: { selectedEm
 }
 
 export default function Evaluation360Page() {
-  const { isAdmin, currentEmployee } = useUser();
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const { currentEmployee } = useUser();
 
-  if (!isAdmin && currentEmployee) {
+  if (currentEmployee) {
     return <Eval360EmployeeView employeeId={currentEmployee.id} />;
   }
 
-  return <Eval360AdminView selectedEmployeeId={selectedEmployeeId} onSelectEmployee={setSelectedEmployeeId} />;
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <p className="text-gray-500">No hay empleado asignado a tu cuenta.</p>
+    </div>
+  );
 }

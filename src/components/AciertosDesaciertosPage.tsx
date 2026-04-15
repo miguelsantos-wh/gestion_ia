@@ -100,53 +100,15 @@ function AciertosProfileView({ employeeId, onClose, canEdit }: { employeeId: str
 }
 
 export default function AciertosDesaciertosPage() {
-  const { isAdmin, currentEmployee } = useUser();
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const { currentEmployee, isAdmin } = useUser();
 
-  if (!isAdmin && currentEmployee) {
-    return <AciertosProfileView employeeId={currentEmployee.id} canEdit={false} />;
-  }
-
-  if (isAdmin && selectedEmployeeId) {
-    return <AciertosProfileView employeeId={selectedEmployeeId} onClose={() => setSelectedEmployeeId(null)} canEdit={true} />;
+  if (currentEmployee) {
+    return <AciertosProfileView employeeId={currentEmployee.id} canEdit={isAdmin} />;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-orange-50 rounded-2xl border border-orange-200 p-4 mb-4">
-        <h3 className="text-sm font-bold text-orange-900 mb-1">Selecciona un Empleado</h3>
-        <p className="text-sm text-orange-800">Elige un empleado para evaluar sus aciertos y desaciertos</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {EMPLOYEES.map((employee) => (
-          <button
-            key={employee.id}
-            type="button"
-            onClick={() => setSelectedEmployeeId(employee.id)}
-            className="text-left p-4 rounded-2xl border border-gray-200 hover:border-orange-500 hover:bg-orange-50 transition-all group shadow-sm hover:shadow-md"
-          >
-            <div className="flex items-start gap-3 mb-3">
-              <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-lg font-bold text-slate-600 shrink-0">
-                {employee.avatar}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-gray-900 group-hover:text-orange-700 truncate">{employee.name}</div>
-                <div className="text-xs text-gray-500 truncate">{employee.position}</div>
-                <div className="text-xs text-gray-400 truncate">{employee.department}</div>
-              </div>
-            </div>
-            <div className="flex gap-2 text-xs flex-wrap">
-              <span className="px-2 py-1 rounded-full bg-orange-100 text-orange-700 font-medium group-hover:bg-orange-200">
-                Aciertos: Pendiente
-              </span>
-              <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-700 font-medium group-hover:bg-amber-200">
-                Desaciertos: Pendiente
-              </span>
-            </div>
-          </button>
-        ))}
-      </div>
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <p className="text-gray-500">No hay empleado asignado a tu cuenta.</p>
     </div>
   );
 }

@@ -84,56 +84,15 @@ function EmployeeProfile({ employeeId, onClose, canEdit }: { employeeId: string;
 }
 
 export default function EmpleadoAPage() {
-  const { isAdmin, currentEmployee } = useUser();
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const { currentEmployee, isAdmin } = useUser();
 
-  if (!isAdmin && currentEmployee) {
-    return <EmployeeProfile employeeId={currentEmployee.id} canEdit={false} />;
-  }
-
-  if (isAdmin && selectedEmployeeId) {
-    return <EmployeeProfile employeeId={selectedEmployeeId} onClose={() => setSelectedEmployeeId(null)} canEdit={true} />;
+  if (currentEmployee) {
+    return <EmployeeProfile employeeId={currentEmployee.id} canEdit={isAdmin} />;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {EMPLOYEES.map((employee) => (
-          <button
-            key={employee.id}
-            type="button"
-            onClick={() => setSelectedEmployeeId(employee.id)}
-            className="text-left p-4 rounded-2xl border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all group shadow-sm hover:shadow-md"
-          >
-            <div className="flex items-start gap-3 mb-3">
-              <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-lg font-bold text-slate-600 shrink-0">
-                {employee.avatar}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-gray-900 group-hover:text-blue-700 truncate">{employee.name}</div>
-                <div className="text-xs text-gray-500 truncate">{employee.position}</div>
-                <div className="text-xs text-gray-400 truncate">{employee.department}</div>
-              </div>
-            </div>
-            <div className="flex gap-2 text-xs flex-wrap">
-              <span className={`px-2 py-1 rounded-full font-medium ${
-                employee.performanceLevel === 'high' ? 'bg-green-100 text-green-700' :
-                employee.performanceLevel === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                'bg-red-100 text-red-700'
-              }`}>
-                Rendimiento: {employee.performanceLevel === 'high' ? 'Alto' : employee.performanceLevel === 'medium' ? 'Medio' : 'Bajo'}
-              </span>
-              <span className={`px-2 py-1 rounded-full font-medium ${
-                employee.potentialLevel === 'high' ? 'bg-purple-100 text-purple-700' :
-                employee.potentialLevel === 'medium' ? 'bg-blue-100 text-blue-700' :
-                'bg-gray-100 text-gray-700'
-              }`}>
-                Potencial: {employee.potentialLevel === 'high' ? 'Alto' : employee.potentialLevel === 'medium' ? 'Medio' : 'Bajo'}
-              </span>
-            </div>
-          </button>
-        ))}
-      </div>
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <p className="text-gray-500">No hay empleado asignado a tu cuenta.</p>
     </div>
   );
 }
