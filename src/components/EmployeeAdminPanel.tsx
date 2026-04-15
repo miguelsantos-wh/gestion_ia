@@ -22,7 +22,7 @@ function VotesMatrix({
   percList: PerceptionPlacement[];
   autoPerc: PerceptionPlacement | undefined;
 }) {
-  const [hovered, setHovered] = useState<string | null>(null);
+  const [hoveredBox, setHoveredBox] = useState<string | null>(null);
 
   const grouped = useMemo(() => {
     const map: Record<string, { cfg: typeof BOX_CONFIGS[0]; voters: { name: string; isAnon: boolean; isAuto: boolean }[] }> = {};
@@ -48,96 +48,139 @@ function VotesMatrix({
   return (
     <div>
       <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Votos en la matriz</p>
-      <div className="flex gap-2">
-        <div className="flex flex-col justify-around pr-1" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
-          {POT_ORDER.map((pot) => (
-            <div key={pot} className="text-[9px] text-gray-400 font-semibold text-right w-8 leading-none flex items-center justify-end" style={{ height: '64px' }}>
-              {pot === 'high' ? 'Alto' : pot === 'medium' ? 'Med' : 'Bajo'}
+      <div className="w-full">
+        <div className="flex items-stretch gap-2">
+          <div className="flex flex-col items-center justify-center w-5 shrink-0">
+            <div className="flex flex-col items-center gap-1" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+              <span className="text-[9px] font-semibold text-gray-400 tracking-widest uppercase">Valores</span>
             </div>
-          ))}
-        </div>
-
-        <div className="flex-1">
-          <div className="grid grid-cols-3 gap-1">
-            {POT_ORDER.map((pot) =>
-              PERF_ORDER.map((perf) => {
-                const key = `${perf}-${pot}`;
-                const cfg = BOX_CONFIGS.find((b) => b.performanceLevel === perf && b.potentialLevel === pot)!;
-                const cell = grouped[key];
-                const isHovered = hovered === key;
-
-                return (
-                  <div
-                    key={key}
-                    className="relative rounded-xl border-2 transition-all duration-150 flex flex-col items-start justify-start p-1.5 cursor-default"
-                    style={{
-                      backgroundColor: cell ? cfg.bgColor : '#f9fafb',
-                      borderColor: cell ? cfg.color : '#e5e7eb',
-                      minHeight: '64px',
-                      boxShadow: isHovered && cell ? `0 0 0 2px ${cfg.color}60` : undefined,
-                    }}
-                    onMouseEnter={() => cell && setHovered(key)}
-                    onMouseLeave={() => setHovered(null)}
-                  >
-                    <div className="text-[9px] font-black mb-1 leading-none" style={{ color: cell ? cfg.textColor : '#d1d5db' }}>
-                      {cfg.code}
-                    </div>
-
-                    {cell && (
-                      <div className="flex flex-wrap gap-0.5">
-                        {cell.voters.map((v, vi) => (
-                          <div
-                            key={vi}
-                            title={v.name}
-                            className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shadow-sm border border-white"
-                            style={{
-                              backgroundColor: v.isAuto ? '#2563eb' : v.isAnon ? '#94a3b8' : cfg.color,
-                              color: 'white',
-                            }}
-                          >
-                            {v.isAuto ? (
-                              <User size={9} />
-                            ) : v.isAnon ? (
-                              <UserX size={9} />
-                            ) : (
-                              v.name.split(' ').map((n) => n[0]).slice(0, 2).join('')
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {isHovered && cell && (
-                      <div className="absolute bottom-full left-0 mb-1.5 z-20 bg-gray-900 text-white text-[10px] rounded-lg px-2.5 py-2 shadow-xl whitespace-nowrap max-w-[180px]">
-                        <div className="font-bold mb-1" style={{ color: cfg.bgColor }}>{cfg.code} · {cfg.label}</div>
-                        {cell.voters.map((v, vi) => (
-                          <div key={vi} className="flex items-center gap-1.5 py-0.5">
-                            {v.isAuto ? (
-                              <User size={9} className="text-blue-400 shrink-0" />
-                            ) : v.isAnon ? (
-                              <UserX size={9} className="text-gray-400 shrink-0" />
-                            ) : (
-                              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: cfg.color }} />
-                            )}
-                            <span className={v.isAnon && !v.isAuto ? 'text-gray-400 italic' : 'text-white'}>{v.name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
           </div>
 
-          <div className="flex justify-around mt-1">
-            {PERF_ORDER.map((perf) => (
-              <div key={perf} className="text-[9px] text-gray-400 font-semibold text-center flex-1">
-                {perf === 'high' ? 'Alto' : perf === 'medium' ? 'Med' : 'Bajo'}
+          <div className="flex flex-col gap-1 w-full">
+            <div className="flex gap-1">
+              <div className="flex flex-col justify-between w-10 shrink-0 text-right pr-1.5">
+                <span className="text-[9px] font-medium text-gray-400 py-1">Alto</span>
+                <span className="text-[9px] font-medium text-gray-400 py-1">Medio</span>
+                <span className="text-[9px] font-medium text-gray-400 py-1">Bajo</span>
               </div>
-            ))}
+
+              <div className="flex-1 grid grid-rows-3 gap-1">
+                {POT_ORDER.map((pot) => (
+                  <div key={pot} className="grid grid-cols-3 gap-1">
+                    {PERF_ORDER.map((perf) => {
+                      const key = `${perf}-${pot}`;
+                      const cfg = BOX_CONFIGS.find((b) => b.performanceLevel === perf && b.potentialLevel === pot)!;
+                      const cell = grouped[key];
+                      const isHovered = hoveredBox === key;
+                      const count = cell?.voters.length ?? 0;
+
+                      return (
+                        <div
+                          key={key}
+                          onMouseEnter={() => setHoveredBox(key)}
+                          onMouseLeave={() => setHoveredBox(null)}
+                          className="relative rounded-xl border-2 transition-all duration-200"
+                          style={{
+                            backgroundColor: cell ? (isHovered ? cfg.bgColor : `${cfg.bgColor}99`) : '#f9fafb',
+                            borderColor: cell ? (isHovered ? cfg.color : `${cfg.color}40`) : '#e5e7eb',
+                            minHeight: '90px',
+                            transform: isHovered && cell ? 'scale(1.01)' : 'scale(1)',
+                          }}
+                        >
+                          <div className="p-2 h-full flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-baseline gap-1 flex-wrap">
+                                <span
+                                  className="font-black leading-none text-sm"
+                                  style={{ color: cell ? cfg.textColor : '#d1d5db' }}
+                                >
+                                  {cfg.code}
+                                </span>
+                                <span
+                                  className="font-bold leading-tight text-[10px]"
+                                  style={{ color: cell ? cfg.textColor : '#d1d5db' }}
+                                >
+                                  {cfg.label}
+                                </span>
+                              </div>
+                              <div
+                                className="text-[9px] mt-0.5 opacity-80 leading-snug"
+                                style={{ color: cell ? cfg.textColor : '#d1d5db' }}
+                              >
+                                {cfg.description}
+                              </div>
+                            </div>
+
+                            {cell && (
+                              <div className="flex flex-wrap gap-0.5 mt-1">
+                                {cell.voters.map((v, vi) => (
+                                  <div
+                                    key={vi}
+                                    title={v.name}
+                                    className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold shadow-sm border border-white transition-all duration-150 hover:scale-110"
+                                    style={{
+                                      backgroundColor: v.isAuto ? '#2563eb' : v.isAnon ? '#94a3b8' : cfg.color,
+                                      color: 'white',
+                                    }}
+                                  >
+                                    {v.isAuto ? (
+                                      <User size={10} />
+                                    ) : v.isAnon ? (
+                                      <UserX size={10} />
+                                    ) : (
+                                      v.name.split(' ').map((n) => n[0]).slice(0, 2).join('')
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {count > 0 && (
+                            <div
+                              className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                              style={{ backgroundColor: `${cfg.color}20`, color: cfg.color }}
+                            >
+                              {count}
+                            </div>
+                          )}
+
+                          {isHovered && cell && (
+                            <div className="absolute bottom-full left-0 mb-1.5 z-20 bg-gray-900 text-white text-[10px] rounded-lg px-2.5 py-2 shadow-xl whitespace-nowrap max-w-[200px]">
+                              <div className="font-bold mb-1" style={{ color: cfg.bgColor }}>{cfg.code} · {cfg.label}</div>
+                              {cell.voters.map((v, vi) => (
+                                <div key={vi} className="flex items-center gap-1.5 py-0.5">
+                                  {v.isAuto ? (
+                                    <User size={9} className="text-blue-400 shrink-0" />
+                                  ) : v.isAnon ? (
+                                    <UserX size={9} className="text-gray-400 shrink-0" />
+                                  ) : (
+                                    <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: cfg.color }} />
+                                  )}
+                                  <span className={v.isAnon && !v.isAuto ? 'text-gray-400 italic' : 'text-white'}>{v.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex ml-10 gap-1 mt-1">
+              <div className="flex-1 grid grid-cols-3 gap-1 text-center">
+                <span className="text-[9px] font-medium text-gray-400">Bajo</span>
+                <span className="text-[9px] font-medium text-gray-400">Medio</span>
+                <span className="text-[9px] font-medium text-gray-400">Alto</span>
+              </div>
+            </div>
+            <div className="flex justify-center ml-10 mt-0.5">
+              <span className="text-[9px] font-semibold text-gray-400 tracking-widest uppercase">Resultados</span>
+            </div>
           </div>
-          <div className="text-[9px] text-gray-400 text-center mt-0.5">Resultados →</div>
         </div>
       </div>
 
