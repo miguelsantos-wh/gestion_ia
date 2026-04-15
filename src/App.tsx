@@ -1,377 +1,67 @@
 import { useLayoutEffect, useState } from 'react';
-import { EMPLOYEES, BOX_CONFIGS } from './data/mockData';
-import IndividualView from './components/IndividualView';
-import Evaluation360View from './components/Evaluation360View';
-import Evaluation360Results from './components/Evaluation360Results';
-import PendingEvaluations360 from './components/PendingEvaluations360';
-import PendingAciertosDesaciertos from './components/PendingAciertosDesaciertos';
-import EmployeeAdminPanel from './components/EmployeeAdminPanel';
+import Sidebar, { SidebarView } from './components/Sidebar';
+import DashboardPage from './components/DashboardPage';
+import EmployeesPage from './components/EmployeesPage';
+import EvaluationsPage from './components/EvaluationsPage';
+import EmpleadoAPage from './components/EmpleadoAPage';
+import Evaluation360Page from './components/Evaluation360Page';
+import AciertosDesaciertosPage from './components/AciertosDesaciertosPage';
+import KPITrackerPage from './components/KPITrackerPage';
+import InsightsPage from './components/InsightsPage';
+import ConfigurationPage from './components/ConfigurationPage';
 import PublicEval360Page from './components/PublicEval360Page';
 import PublicPercepcionPage from './components/PublicPercepcionPage';
 import PublicAutoPercepcionPage from './components/PublicAutoPercepcionPage';
 import MiPercepcionPage from './components/MiPercepcionPage';
 import { isEval360Hash, isPercepcionHash, isAutoPercepcionHash } from './utils/hashRoute';
 import { getPathFromLocationHash } from './utils/hashRoute';
-import { useEvaluationStore } from './context/EvaluationContext';
-import { BarChart3, Users, Grid3x3 as Grid3X3, ClipboardList, Eye, Star, TrendingUp, ChevronUp, TrendingDown, ThumbsUp, Target } from 'lucide-react';
 
 function isMiPercepcionHash(hash: string): boolean {
   const p = getPathFromLocationHash(hash);
   return p === '/mis-resultados' || p.startsWith('/mis-resultados/');
 }
 
-type AdminView = 'overview' | 'empleados' | 'matriz' | 'resultados' | 'eval360' | 'empleadoA' | 'aciertos' | 'empleadoA-resumen' | 'empleadoA-colaboradores' | 'empleadoA-matriz' | 'empleadoA-resultados' | 'eval360-asignar' | 'eval360-resultados' | 'eval360-pendientes' | 'aciertos-pendientes' | 'aciertos-resultados';
-
-const ADMIN_TABS: { id: AdminView; label: string; icon: React.ReactNode }[] = [
-  { id: 'overview', label: 'Resumen', icon: <BarChart3 size={15} /> },
-  { id: 'empleados', label: 'Colaboradores', icon: <Users size={15} /> },
-  { id: 'matriz', label: 'Matriz 9-Box', icon: <Grid3X3 size={15} /> },
-  { id: 'resultados', label: 'Resultados', icon: <Eye size={15} /> },
-];
-
-const EMPLEADO_A_TABS: { id: Exclude<AdminView, 'overview' | 'empleados' | 'matriz' | 'resultados'>; label: string; icon: React.ReactNode }[] = [
-  { id: 'empleadoA-resumen', label: 'Empleado A', icon: <Users size={15} /> },
-];
-
-const EVAL360_TABS: { id: Exclude<AdminView, 'overview' | 'empleados' | 'matriz' | 'resultados'>; label: string; icon: React.ReactNode }[] = [
-  { id: 'eval360-asignar', label: 'Asignar Evaluación', icon: <ClipboardList size={15} /> },
-  { id: 'eval360-resultados', label: 'Resultados', icon: <Eye size={15} /> },
-  { id: 'eval360-pendientes', label: 'Evaluaciones Pendientes', icon: <Target size={15} /> },
-];
-
-const ACIERTOS_TABS: { id: Exclude<AdminView, 'overview' | 'empleados' | 'matriz' | 'resultados'>; label: string; icon: React.ReactNode }[] = [
-  { id: 'aciertos-pendientes', label: 'Evaluaciones Pendientes', icon: <Target size={15} /> },
-  { id: 'aciertos-resultados', label: 'Resultados', icon: <Eye size={15} /> },
-];
-
-function StatCard({
-  icon,
-  label,
-  value,
-  sub,
-  color,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string | number;
-  sub?: string;
-  color: string;
-}) {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4">
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}18` }}>
-        <span style={{ color }}>{icon}</span>
-      </div>
-      <div>
-        <div className="text-xs font-medium text-gray-500">{label}</div>
-        <div className="text-2xl font-bold text-gray-900 mt-0.5">{value}</div>
-        {sub && <div className="text-xs text-gray-400 mt-0.5">{sub}</div>}
-      </div>
-    </div>
-  );
-}
-
-function OverviewView() {
-  const { percepcion, autoPercepcion } = useEvaluationStore();
-
-  const total = EMPLOYEES.length;
-  const departments = Array.from(new Set(EMPLOYEES.map((e) => e.department)));
-
-  const estrellas = EMPLOYEES.filter((e) => e.performanceLevel === 'high' && e.potentialLevel === 'high').length;
-  const altoValores = EMPLOYEES.filter((e) => e.potentialLevel === 'high').length;
-  const altoResultados = EMPLOYEES.filter((e) => e.performanceLevel === 'high').length;
-  const bajoRendimiento = EMPLOYEES.filter((e) => e.performanceLevel === 'low' && e.potentialLevel === 'low').length;
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatCard icon={<Users size={18} />} label="Total Colaboradores" value={total} sub="registrados en el sistema" color="#2563eb" />
-        <StatCard icon={<Star size={18} />} label="Estrellas" value={estrellas} sub="alto potencial · alto rendimiento" color="#d97706" />
-        <StatCard icon={<ChevronUp size={18} />} label="Alto Valores" value={altoValores} sub="potencial alto" color="#059669" />
-        <StatCard icon={<TrendingUp size={18} />} label="Alto Resultados" value={altoResultados} sub="rendimiento alto" color="#0d9488" />
-        <StatCard icon={<TrendingDown size={18} />} label="Bajo Rendimiento" value={bajoRendimiento} sub="bajo potencial · bajo rendimiento" color="#dc2626" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h3 className="text-sm font-bold text-gray-700 mb-4">Estado por área</h3>
-          <div className="space-y-3">
-            {departments.map((dept) => {
-              const emps = EMPLOYEES.filter((e) => e.department === dept);
-              const evaluated = emps.filter(
-                (e) => (percepcion[e.id]?.length ?? 0) > 0 || !!autoPercepcion[e.id]
-              ).length;
-              const pct = emps.length > 0 ? (evaluated / emps.length) * 100 : 0;
-              return (
-                <div key={dept} className="flex items-center gap-3">
-                  <div className="w-7 h-7 bg-gradient-to-br from-slate-600 to-slate-800 rounded-lg flex items-center justify-center shrink-0">
-                    <span className="text-white text-xs font-bold">{dept.slice(0, 2).toUpperCase()}</span>
-                  </div>
-                  <span className="text-xs font-medium text-gray-700 w-28 shrink-0">{dept}</span>
-                  <div className="flex-1 bg-gray-100 rounded-full h-2.5">
-                    <div
-                      className="h-2.5 rounded-full transition-all duration-700"
-                      style={{ width: `${pct}%`, backgroundColor: pct === 100 ? '#059669' : pct > 0 ? '#2563eb' : '#e5e7eb' }}
-                    />
-                  </div>
-                  <span className="text-xs font-bold text-gray-700 w-10 text-right">{evaluated}/{emps.length}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h3 className="text-sm font-bold text-gray-700 mb-4">Colaboradores</h3>
-          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-            {EMPLOYEES.map((e) => {
-              const hasPerc = (percepcion[e.id]?.length ?? 0) > 0;
-              const hasAuto = !!autoPercepcion[e.id];
-              return (
-                <div key={e.id} className="flex items-center gap-3 py-1.5">
-                  <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
-                    {e.avatar}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-gray-800 truncate">{e.name}</div>
-                    <div className="text-xs text-gray-400 truncate">{e.position}</div>
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    {hasPerc ? (
-                      <span className="text-xs bg-teal-50 text-teal-700 border border-teal-100 rounded-full px-2 py-0.5 font-medium">
-                        {percepcion[e.id].length} perc.
-                      </span>
-                    ) : (
-                      <span className="text-xs bg-gray-50 text-gray-400 border border-gray-100 rounded-full px-2 py-0.5">sin perc.</span>
-                    )}
-                    {hasAuto ? (
-                      <span className="text-xs bg-blue-50 text-blue-700 border border-blue-100 rounded-full px-2 py-0.5 font-medium">auto</span>
-                    ) : (
-                      <span className="text-xs bg-gray-50 text-gray-400 border border-gray-100 rounded-full px-2 py-0.5">sin auto</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <h3 className="text-sm font-bold text-gray-700 mb-4">Definición de Cuadrantes</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {BOX_CONFIGS.map((cfg) => (
-            <div
-              key={cfg.id}
-              className="rounded-xl p-4 border"
-              style={{ backgroundColor: cfg.bgColor, borderColor: `${cfg.color}30` }}
-            >
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: cfg.color }} />
-                <span className="text-lg font-black" style={{ color: cfg.textColor }}>{cfg.code}</span>
-                <span className="text-sm font-bold" style={{ color: cfg.textColor }}>{cfg.label}</span>
-              </div>
-              <p className="text-xs text-gray-600 leading-relaxed mb-2">{cfg.description}</p>
-              <ul className="text-xs text-gray-700 leading-relaxed mb-2 list-disc pl-4 space-y-0.5">
-                {cfg.detailBullets.map((line, i) => (
-                  <li key={`${cfg.id}-b${i}`}>{line}</li>
-                ))}
-              </ul>
-              <p className="text-xs font-medium" style={{ color: cfg.textColor }}>{cfg.recommendation}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-const VIEW_TITLES: Record<AdminView, { title: string; sub: string }> = {
-  overview: { title: 'Resumen Ejecutivo', sub: `Panorama general — ${EMPLOYEES.length} colaboradores registrados` },
-  empleados: { title: 'Colaboradores', sub: 'Fichas individuales con resultados, enlaces y asignación de evaluadores' },
-  matriz: { title: 'Matriz 9-Box', sub: 'Visualiza la posición de los colaboradores según evaluaciones recibidas' },
-  resultados: { title: 'Resultados de percepción', sub: 'Resumen de todas las percepciones externas y autoevaluaciones' },
-  empleadoA: { title: 'Empleado A', sub: 'Vista completa del sistema — resumen, colaboradores, matriz y resultados' },
-  'empleadoA-resumen': { title: 'Empleado A', sub: 'Resumen y colaboradores' },
-  'empleadoA-colaboradores': { title: 'Empleado A - Colaboradores', sub: '' },
-  'empleadoA-matriz': { title: 'Empleado A - Matriz 9-Box', sub: '' },
-  'empleadoA-resultados': { title: 'Empleado A - Resultados', sub: '' },
-  eval360: { title: 'Evaluación 360', sub: 'Asignar evaluaciones, ver resultados y evaluaciones pendientes' },
-  'eval360-asignar': { title: 'Evaluación 360', sub: 'Asignar evaluaciones 360 a colaboradores' },
-  'eval360-resultados': { title: 'Evaluación 360 - Resultados', sub: 'Análisis de resultados por competencia' },
-  'eval360-pendientes': { title: 'Evaluaciones Pendientes', sub: 'Evaluaciones 360 asignadas que necesitan respuesta' },
-  aciertos: { title: 'Aciertos y desaciertos', sub: 'Evaluaciones pendientes y resultados' },
-  'aciertos-pendientes': { title: 'Aciertos y Desaciertos', sub: 'Evaluaciones pendientes asignadas' },
-  'aciertos-resultados': { title: 'Aciertos y Desaciertos', sub: 'Resultados de evaluaciones' },
+const PAGE_TITLES: Record<SidebarView, { title: string; sub: string }> = {
+  dashboard: { title: 'Dashboard', sub: 'Panorama general del sistema de evaluaciones' },
+  empleados: { title: 'Empleados', sub: 'Gestión centralizada de perfiles y evaluaciones' },
+  evaluaciones: { title: 'Evaluaciones', sub: 'Asignación y seguimiento de evaluaciones' },
+  empleadoA: { title: 'Empleado A', sub: 'Resumen, colaboradores, matriz y resultados' },
+  eval360: { title: 'Evaluación 360', sub: 'Asignación, seguimiento y análisis de evaluaciones 360' },
+  aciertos: { title: 'Aciertos y Desaciertos', sub: 'Evaluación de fortalezas y áreas de mejora' },
+  kpi: { title: 'KPI Tracker', sub: 'Métricas y rendimiento del sistema' },
+  insights: { title: 'Insights', sub: 'Análisis inteligente de datos de evaluación' },
+  configuracion: { title: 'Configuración', sub: 'Ajustes del sistema y gestión de usuarios' },
 };
 
 function MainApp() {
-  const [activeView, setActiveView] = useState<AdminView>('overview');
+  const [activeView, setActiveView] = useState<SidebarView>('dashboard');
 
-  const { title, sub } = VIEW_TITLES[activeView];
-
-  const isEmpleadoAView = activeView.startsWith('empleadoA');
-  const isEval360View = activeView.startsWith('eval360');
-  const isAciertosView = activeView.startsWith('aciertos');
-
-  const getTabs = () => {
-    if (isEmpleadoAView) {
-      return [
-        { id: 'empleadoA', label: 'Empleado A', icon: <Users size={15} /> } as const,
-        { id: 'eval360', label: 'Evaluación 360', icon: <ClipboardList size={15} /> } as const,
-        { id: 'aciertos', label: 'Aciertos y desaciertos', icon: <ThumbsUp size={15} /> } as const,
-      ];
-    }
-    if (isEval360View) {
-      return [
-        { id: 'empleadoA', label: 'Empleado A', icon: <Users size={15} /> } as const,
-        { id: 'eval360', label: 'Evaluación 360', icon: <ClipboardList size={15} /> } as const,
-        { id: 'aciertos', label: 'Aciertos y desaciertos', icon: <ThumbsUp size={15} /> } as const,
-      ];
-    }
-    if (isAciertosView) {
-      return [
-        { id: 'empleadoA', label: 'Empleado A', icon: <Users size={15} /> } as const,
-        { id: 'eval360', label: 'Evaluación 360', icon: <ClipboardList size={15} /> } as const,
-        { id: 'aciertos', label: 'Aciertos y desaciertos', icon: <ThumbsUp size={15} /> } as const,
-      ];
-    }
-    return ADMIN_TABS;
-  };
-
-  const getSubTabs = () => {
-    if (isEmpleadoAView) {
-      return [
-        { id: 'empleadoA-resumen' as const, label: 'Resumen' },
-        { id: 'empleadoA-colaboradores' as const, label: 'Colaboradores' },
-        { id: 'empleadoA-matriz' as const, label: 'Matriz 9-Box' },
-        { id: 'empleadoA-resultados' as const, label: 'Resultados' },
-      ];
-    }
-    if (isEval360View) {
-      return [
-        { id: 'eval360-asignar' as const, label: 'Asignar Evaluación' },
-        { id: 'eval360-resultados' as const, label: 'Resultados' },
-        { id: 'eval360-pendientes' as const, label: 'Evaluaciones Pendientes' },
-      ];
-    }
-    if (isAciertosView) {
-      return [
-        { id: 'aciertos-pendientes' as const, label: 'Evaluaciones Pendientes' },
-        { id: 'aciertos-resultados' as const, label: 'Resultados' },
-      ];
-    }
-    return [];
-  };
+  const { title, sub } = PAGE_TITLES[activeView];
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-14">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl flex items-center justify-center">
-                <Grid3X3 size={16} className="text-white" />
-              </div>
-              <div>
-                <h1 className="text-sm font-bold text-gray-900">Matriz 9-Box</h1>
-                <p className="text-xs text-gray-400 hidden sm:block">Panel RRHH</p>
-              </div>
-            </div>
+    <div className="flex min-h-screen bg-gray-50 font-sans">
+      <Sidebar activeView={activeView} onViewChange={setActiveView} />
 
-            <nav className="flex items-center gap-0.5 bg-gray-100 rounded-xl p-1 overflow-x-auto max-w-[60vw] sm:max-w-none">
-              {getTabs().map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => {
-                    if (tab.id === 'empleadoA') setActiveView('empleadoA-resumen');
-                    else if (tab.id === 'eval360') setActiveView('eval360-asignar');
-                    else if (tab.id === 'aciertos') setActiveView('aciertos-pendientes');
-                    else setActiveView(tab.id as AdminView);
-                  }}
-                  className={`
-                    flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap
-                    ${isEmpleadoAView && tab.id === 'empleadoA' || isEval360View && tab.id === 'eval360' || isAciertosView && tab.id === 'aciertos'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : !isEmpleadoAView && !isEval360View && !isAciertosView && (ADMIN_TABS as any[]).find(t => t.id === activeView)?.id === tab.id
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                    }
-                  `}
-                >
-                  {tab.icon}
-                  <span className="hidden sm:inline">{tab.label}</span>
-                </button>
-              ))}
-            </nav>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="w-7 h-7 bg-gradient-to-br from-slate-600 to-slate-800 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">RH</span>
-              </div>
-              <div className="hidden sm:block text-right">
-                <div className="text-xs font-semibold text-gray-700">RRHH Admin</div>
-                <div className="text-xs text-gray-400">Ciclo 2024</div>
-              </div>
-            </div>
+      <div className="flex-1 lg:ml-64">
+        <header className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm">
+          <div className="px-6 py-5">
+            <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+            <p className="text-sm text-gray-600 mt-1">{sub}</p>
           </div>
+        </header>
 
-          {getSubTabs().length > 0 && (
-            <div className="border-t border-gray-100 px-4 sm:px-6 flex items-center gap-0.5 bg-gray-50 overflow-x-auto">
-              {getSubTabs().map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveView(tab.id)}
-                  className={`
-                    px-3 py-2 text-xs font-medium transition-all whitespace-nowrap
-                    ${activeView === tab.id
-                      ? 'text-gray-900 border-b-2 border-blue-500'
-                      : 'text-gray-500 hover:text-gray-700 border-b-2 border-transparent'
-                    }
-                  `}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <div className="mb-5">
-          <h2 className="text-lg font-bold text-gray-900">{title}</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{sub}</p>
-        </div>
-
-        {activeView === 'overview' && <OverviewView />}
-        {activeView === 'empleados' && <EmployeeAdminPanel view="empleados" />}
-        {activeView === 'matriz' && <IndividualView employees={EMPLOYEES} />}
-        {activeView === 'resultados' && <EmployeeAdminPanel view="resultados" />}
-
-        {activeView === 'empleadoA-resumen' && <OverviewView />}
-        {activeView === 'empleadoA-colaboradores' && <EmployeeAdminPanel view="empleados" />}
-        {activeView === 'empleadoA-matriz' && <IndividualView employees={EMPLOYEES} />}
-        {activeView === 'empleadoA-resultados' && <EmployeeAdminPanel view="resultados" />}
-
-        {activeView === 'eval360-asignar' && <Evaluation360View />}
-        {activeView === 'eval360-resultados' && <Evaluation360Results />}
-        {activeView === 'eval360-pendientes' && <PendingEvaluations360 />}
-
-        {activeView === 'aciertos-pendientes' && <PendingAciertosDesaciertos />}
-        {activeView === 'aciertos-resultados' && (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
-              <Eye size={28} className="text-gray-400" />
-            </div>
-            <h3 className="text-base font-bold text-gray-700 mb-2">Resultados Aciertos y Desaciertos</h3>
-            <p className="text-sm text-gray-400 max-w-xs">Los resultados se mostrarán aquí una vez completadas las evaluaciones.</p>
-          </div>
-        )}
-      </main>
+        <main className="p-6 max-w-7xl mx-auto">
+          {activeView === 'dashboard' && <DashboardPage />}
+          {activeView === 'empleados' && <EmployeesPage />}
+          {activeView === 'evaluaciones' && <EvaluationsPage />}
+          {activeView === 'empleadoA' && <EmpleadoAPage />}
+          {activeView === 'eval360' && <Evaluation360Page />}
+          {activeView === 'aciertos' && <AciertosDesaciertosPage />}
+          {activeView === 'kpi' && <KPITrackerPage />}
+          {activeView === 'insights' && <InsightsPage />}
+          {activeView === 'configuracion' && <ConfigurationPage />}
+        </main>
+      </div>
     </div>
   );
 }
