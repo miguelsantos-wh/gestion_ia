@@ -2,6 +2,9 @@ import { useLayoutEffect, useState } from 'react';
 import { EMPLOYEES, BOX_CONFIGS } from './data/mockData';
 import IndividualView from './components/IndividualView';
 import Evaluation360View from './components/Evaluation360View';
+import Evaluation360Results from './components/Evaluation360Results';
+import PendingEvaluations360 from './components/PendingEvaluations360';
+import PendingAciertosDesaciertos from './components/PendingAciertosDesaciertos';
 import EmployeeAdminPanel from './components/EmployeeAdminPanel';
 import PublicEval360Page from './components/PublicEval360Page';
 import PublicPercepcionPage from './components/PublicPercepcionPage';
@@ -17,16 +20,28 @@ function isMiPercepcionHash(hash: string): boolean {
   return p === '/mis-resultados' || p.startsWith('/mis-resultados/');
 }
 
-type AdminView = 'overview' | 'empleados' | 'matriz' | 'resultados' | 'eval360' | 'empleadoA' | 'aciertos';
+type AdminView = 'overview' | 'empleados' | 'matriz' | 'resultados' | 'eval360' | 'empleadoA' | 'aciertos' | 'empleadoA-resumen' | 'empleadoA-colaboradores' | 'empleadoA-matriz' | 'empleadoA-resultados' | 'eval360-asignar' | 'eval360-resultados' | 'eval360-pendientes' | 'aciertos-pendientes' | 'aciertos-resultados';
 
 const ADMIN_TABS: { id: AdminView; label: string; icon: React.ReactNode }[] = [
   { id: 'overview', label: 'Resumen', icon: <BarChart3 size={15} /> },
   { id: 'empleados', label: 'Colaboradores', icon: <Users size={15} /> },
   { id: 'matriz', label: 'Matriz 9-Box', icon: <Grid3X3 size={15} /> },
   { id: 'resultados', label: 'Resultados', icon: <Eye size={15} /> },
-  { id: 'empleadoA', label: 'Empleado A', icon: <Users size={15} /> },
-  { id: 'eval360', label: 'Evaluación 360', icon: <ClipboardList size={15} /> },
-  { id: 'aciertos', label: 'Aciertos y desaciertos', icon: <ThumbsUp size={15} /> },
+];
+
+const EMPLEADO_A_TABS: { id: Exclude<AdminView, 'overview' | 'empleados' | 'matriz' | 'resultados'>; label: string; icon: React.ReactNode }[] = [
+  { id: 'empleadoA-resumen', label: 'Empleado A', icon: <Users size={15} /> },
+];
+
+const EVAL360_TABS: { id: Exclude<AdminView, 'overview' | 'empleados' | 'matriz' | 'resultados'>; label: string; icon: React.ReactNode }[] = [
+  { id: 'eval360-asignar', label: 'Asignar Evaluación', icon: <ClipboardList size={15} /> },
+  { id: 'eval360-resultados', label: 'Resultados', icon: <Eye size={15} /> },
+  { id: 'eval360-pendientes', label: 'Evaluaciones Pendientes', icon: <Target size={15} /> },
+];
+
+const ACIERTOS_TABS: { id: Exclude<AdminView, 'overview' | 'empleados' | 'matriz' | 'resultados'>; label: string; icon: React.ReactNode }[] = [
+  { id: 'aciertos-pendientes', label: 'Evaluaciones Pendientes', icon: <Target size={15} /> },
+  { id: 'aciertos-resultados', label: 'Resultados', icon: <Eye size={15} /> },
 ];
 
 function StatCard({
@@ -177,15 +192,78 @@ const VIEW_TITLES: Record<AdminView, { title: string; sub: string }> = {
   empleados: { title: 'Colaboradores', sub: 'Fichas individuales con resultados, enlaces y asignación de evaluadores' },
   matriz: { title: 'Matriz 9-Box', sub: 'Visualiza la posición de los colaboradores según evaluaciones recibidas' },
   resultados: { title: 'Resultados de percepción', sub: 'Resumen de todas las percepciones externas y autoevaluaciones' },
-  empleadoA: { title: 'Empleado A', sub: 'Vista completa del sistema — todos los módulos disponibles' },
-  eval360: { title: 'Evaluación 360', sub: 'Plantilla de cuestionario, enlaces y resultados 360' },
-  aciertos: { title: 'Aciertos y desaciertos', sub: 'Análisis de aciertos y desaciertos por colaborador' },
+  empleadoA: { title: 'Empleado A', sub: 'Vista completa del sistema — resumen, colaboradores, matriz y resultados' },
+  'empleadoA-resumen': { title: 'Empleado A', sub: 'Resumen y colaboradores' },
+  'empleadoA-colaboradores': { title: 'Empleado A - Colaboradores', sub: '' },
+  'empleadoA-matriz': { title: 'Empleado A - Matriz 9-Box', sub: '' },
+  'empleadoA-resultados': { title: 'Empleado A - Resultados', sub: '' },
+  eval360: { title: 'Evaluación 360', sub: 'Asignar evaluaciones, ver resultados y evaluaciones pendientes' },
+  'eval360-asignar': { title: 'Evaluación 360', sub: 'Asignar evaluaciones 360 a colaboradores' },
+  'eval360-resultados': { title: 'Evaluación 360 - Resultados', sub: 'Análisis de resultados por competencia' },
+  'eval360-pendientes': { title: 'Evaluaciones Pendientes', sub: 'Evaluaciones 360 asignadas que necesitan respuesta' },
+  aciertos: { title: 'Aciertos y desaciertos', sub: 'Evaluaciones pendientes y resultados' },
+  'aciertos-pendientes': { title: 'Aciertos y Desaciertos', sub: 'Evaluaciones pendientes asignadas' },
+  'aciertos-resultados': { title: 'Aciertos y Desaciertos', sub: 'Resultados de evaluaciones' },
 };
 
 function MainApp() {
   const [activeView, setActiveView] = useState<AdminView>('overview');
 
   const { title, sub } = VIEW_TITLES[activeView];
+
+  const isEmpleadoAView = activeView.startsWith('empleadoA');
+  const isEval360View = activeView.startsWith('eval360');
+  const isAciertosView = activeView.startsWith('aciertos');
+
+  const getTabs = () => {
+    if (isEmpleadoAView) {
+      return [
+        { id: 'empleadoA', label: 'Empleado A', icon: <Users size={15} /> } as const,
+        { id: 'eval360', label: 'Evaluación 360', icon: <ClipboardList size={15} /> } as const,
+        { id: 'aciertos', label: 'Aciertos y desaciertos', icon: <ThumbsUp size={15} /> } as const,
+      ];
+    }
+    if (isEval360View) {
+      return [
+        { id: 'empleadoA', label: 'Empleado A', icon: <Users size={15} /> } as const,
+        { id: 'eval360', label: 'Evaluación 360', icon: <ClipboardList size={15} /> } as const,
+        { id: 'aciertos', label: 'Aciertos y desaciertos', icon: <ThumbsUp size={15} /> } as const,
+      ];
+    }
+    if (isAciertosView) {
+      return [
+        { id: 'empleadoA', label: 'Empleado A', icon: <Users size={15} /> } as const,
+        { id: 'eval360', label: 'Evaluación 360', icon: <ClipboardList size={15} /> } as const,
+        { id: 'aciertos', label: 'Aciertos y desaciertos', icon: <ThumbsUp size={15} /> } as const,
+      ];
+    }
+    return ADMIN_TABS;
+  };
+
+  const getSubTabs = () => {
+    if (isEmpleadoAView) {
+      return [
+        { id: 'empleadoA-resumen' as const, label: 'Resumen' },
+        { id: 'empleadoA-colaboradores' as const, label: 'Colaboradores' },
+        { id: 'empleadoA-matriz' as const, label: 'Matriz 9-Box' },
+        { id: 'empleadoA-resultados' as const, label: 'Resultados' },
+      ];
+    }
+    if (isEval360View) {
+      return [
+        { id: 'eval360-asignar' as const, label: 'Asignar Evaluación' },
+        { id: 'eval360-resultados' as const, label: 'Resultados' },
+        { id: 'eval360-pendientes' as const, label: 'Evaluaciones Pendientes' },
+      ];
+    }
+    if (isAciertosView) {
+      return [
+        { id: 'aciertos-pendientes' as const, label: 'Evaluaciones Pendientes' },
+        { id: 'aciertos-resultados' as const, label: 'Resultados' },
+      ];
+    }
+    return [];
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
@@ -203,14 +281,21 @@ function MainApp() {
             </div>
 
             <nav className="flex items-center gap-0.5 bg-gray-100 rounded-xl p-1 overflow-x-auto max-w-[60vw] sm:max-w-none">
-              {ADMIN_TABS.map((tab) => (
+              {getTabs().map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setActiveView(tab.id)}
+                  onClick={() => {
+                    if (tab.id === 'empleadoA') setActiveView('empleadoA-resumen');
+                    else if (tab.id === 'eval360') setActiveView('eval360-asignar');
+                    else if (tab.id === 'aciertos') setActiveView('aciertos-pendientes');
+                    else setActiveView(tab.id as AdminView);
+                  }}
                   className={`
                     flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap
-                    ${activeView === tab.id
+                    ${isEmpleadoAView && tab.id === 'empleadoA' || isEval360View && tab.id === 'eval360' || isAciertosView && tab.id === 'aciertos'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : !isEmpleadoAView && !isEval360View && !isAciertosView && (ADMIN_TABS as any[]).find(t => t.id === activeView)?.id === tab.id
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-500 hover:text-gray-700'
                     }
@@ -232,6 +317,27 @@ function MainApp() {
               </div>
             </div>
           </div>
+
+          {getSubTabs().length > 0 && (
+            <div className="border-t border-gray-100 px-4 sm:px-6 flex items-center gap-0.5 bg-gray-50 overflow-x-auto">
+              {getSubTabs().map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveView(tab.id)}
+                  className={`
+                    px-3 py-2 text-xs font-medium transition-all whitespace-nowrap
+                    ${activeView === tab.id
+                      ? 'text-gray-900 border-b-2 border-blue-500'
+                      : 'text-gray-500 hover:text-gray-700 border-b-2 border-transparent'
+                    }
+                  `}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </header>
 
@@ -245,34 +351,24 @@ function MainApp() {
         {activeView === 'empleados' && <EmployeeAdminPanel view="empleados" />}
         {activeView === 'matriz' && <IndividualView employees={EMPLOYEES} />}
         {activeView === 'resultados' && <EmployeeAdminPanel view="resultados" />}
-        {activeView === 'empleadoA' && (
-          <div className="space-y-6">
-            <div>
-              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Resumen</h4>
-              <OverviewView />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Colaboradores</h4>
-              <EmployeeAdminPanel view="empleados" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Matriz 9-Box</h4>
-              <IndividualView employees={EMPLOYEES} />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Resultados de percepción</h4>
-              <EmployeeAdminPanel view="resultados" />
-            </div>
-          </div>
-        )}
-        {activeView === 'eval360' && <Evaluation360View />}
-        {activeView === 'aciertos' && (
+
+        {activeView === 'empleadoA-resumen' && <OverviewView />}
+        {activeView === 'empleadoA-colaboradores' && <EmployeeAdminPanel view="empleados" />}
+        {activeView === 'empleadoA-matriz' && <IndividualView employees={EMPLOYEES} />}
+        {activeView === 'empleadoA-resultados' && <EmployeeAdminPanel view="resultados" />}
+
+        {activeView === 'eval360-asignar' && <Evaluation360View />}
+        {activeView === 'eval360-resultados' && <Evaluation360Results />}
+        {activeView === 'eval360-pendientes' && <PendingEvaluations360 />}
+
+        {activeView === 'aciertos-pendientes' && <PendingAciertosDesaciertos />}
+        {activeView === 'aciertos-resultados' && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
-              <Target size={28} className="text-gray-400" />
+              <Eye size={28} className="text-gray-400" />
             </div>
-            <h3 className="text-base font-bold text-gray-700 mb-2">Aciertos y desaciertos</h3>
-            <p className="text-sm text-gray-400 max-w-xs">Esta sección estará disponible próximamente.</p>
+            <h3 className="text-base font-bold text-gray-700 mb-2">Resultados Aciertos y Desaciertos</h3>
+            <p className="text-sm text-gray-400 max-w-xs">Los resultados se mostrarán aquí una vez completadas las evaluaciones.</p>
           </div>
         )}
       </main>
