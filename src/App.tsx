@@ -10,7 +10,7 @@ import MiPercepcionPage from './components/MiPercepcionPage';
 import { isEval360Hash, isPercepcionHash, isAutoPercepcionHash } from './utils/hashRoute';
 import { getPathFromLocationHash } from './utils/hashRoute';
 import { useEvaluationStore } from './context/EvaluationContext';
-import { BarChart3, Users, Grid3x3 as Grid3X3, TrendingUp, Award, ClipboardList, CircleUser as UserCircle2, Eye, LayoutDashboard, Target, ThumbsUp } from 'lucide-react';
+import { BarChart3, Users, Grid3x3 as Grid3X3, ClipboardList, Eye, LayoutDashboard, Star, TrendingUp, ChevronUp, TrendingDown } from 'lucide-react';
 
 function isMiPercepcionHash(hash: string): boolean {
   const p = getPathFromLocationHash(hash);
@@ -59,20 +59,21 @@ function OverviewView() {
   const { percepcion, autoPercepcion } = useEvaluationStore();
 
   const total = EMPLOYEES.length;
-  const employeesWithPerc = EMPLOYEES.filter((e) => (percepcion[e.id]?.length ?? 0) > 0).length;
-  const employeesWithAuto = EMPLOYEES.filter((e) => !!autoPercepcion[e.id]).length;
-  const employeesEvaluated = EMPLOYEES.filter(
-    (e) => (percepcion[e.id]?.length ?? 0) > 0 || !!autoPercepcion[e.id]
-  ).length;
   const departments = Array.from(new Set(EMPLOYEES.map((e) => e.department)));
+
+  const estrellas = EMPLOYEES.filter((e) => e.performanceLevel === 'high' && e.potentialLevel === 'high').length;
+  const altoValores = EMPLOYEES.filter((e) => e.potentialLevel === 'high').length;
+  const altoResultados = EMPLOYEES.filter((e) => e.performanceLevel === 'high').length;
+  const bajoRendimiento = EMPLOYEES.filter((e) => e.performanceLevel === 'low' && e.potentialLevel === 'low').length;
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard icon={<Users size={18} />} label="Total Colaboradores" value={total} sub="registrados en el sistema" color="#2563eb" />
-        <StatCard icon={<Award size={18} />} label="Con evaluación" value={employeesEvaluated} sub="con al menos un dato" color="#059669" />
-        <StatCard icon={<TrendingUp size={18} />} label="Con percepción externa" value={employeesWithPerc} sub="evaluados por otros" color="#0d9488" />
-        <StatCard icon={<UserCircle2 size={18} />} label="Con autoevaluación" value={employeesWithAuto} sub="se ubicaron en la matriz" color="#1d4ed8" />
+        <StatCard icon={<Star size={18} />} label="Estrellas" value={estrellas} sub="alto potencial · alto rendimiento" color="#d97706" />
+        <StatCard icon={<ChevronUp size={18} />} label="Alto Valores" value={altoValores} sub="potencial alto" color="#059669" />
+        <StatCard icon={<TrendingUp size={18} />} label="Alto Resultados" value={altoResultados} sub="rendimiento alto" color="#0d9488" />
+        <StatCard icon={<TrendingDown size={18} />} label="Bajo Rendimiento" value={bajoRendimiento} sub="bajo potencial · bajo rendimiento" color="#dc2626" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
