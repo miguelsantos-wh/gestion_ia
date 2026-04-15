@@ -420,37 +420,7 @@ function EmployeeDetailPanel({ employee, onClose }: { employee: Employee; onClos
                       <span className="text-2xl font-black leading-none" style={{ color: cfg.color }}>{cfg.code}</span>
                       <span className="text-sm font-bold" style={{ color: cfg.textColor }}>{cfg.label}</span>
                     </div>
-                    <p className="text-xs opacity-75 mb-3 leading-snug" style={{ color: cfg.textColor }}>{cfg.description}</p>
-                    <div className="space-y-2">
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-semibold" style={{ color: cfg.textColor }}>Resultados</span>
-                          <span className="text-[10px] font-black" style={{ color: cfg.color }}>
-                            {Math.round(((derived.performance - 1) / 4) * 100)}%
-                          </span>
-                        </div>
-                        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${cfg.color}25` }}>
-                          <div
-                            className="h-2 rounded-full transition-all duration-700"
-                            style={{ width: `${((derived.performance - 1) / 4) * 100}%`, backgroundColor: '#0d9488' }}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-semibold" style={{ color: cfg.textColor }}>Valores</span>
-                          <span className="text-[10px] font-black" style={{ color: cfg.color }}>
-                            {Math.round(((derived.potential - 1) / 4) * 100)}%
-                          </span>
-                        </div>
-                        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${cfg.color}25` }}>
-                          <div
-                            className="h-2 rounded-full transition-all duration-700"
-                            style={{ width: `${((derived.potential - 1) / 4) * 100}%`, backgroundColor: '#2563eb' }}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    <p className="text-xs opacity-75 leading-snug" style={{ color: cfg.textColor }}>{cfg.description}</p>
                   </>
                 ) : null}
               </div>
@@ -484,37 +454,7 @@ function EmployeeDetailPanel({ employee, onClose }: { employee: Employee; onClos
                       <span className="text-2xl font-black leading-none" style={{ color: cfgAuto.color }}>{cfgAuto.code}</span>
                       <span className="text-sm font-bold" style={{ color: cfgAuto.textColor }}>{cfgAuto.label}</span>
                     </div>
-                    <p className="text-xs opacity-75 mb-3 leading-snug" style={{ color: cfgAuto.textColor }}>{cfgAuto.description}</p>
-                    <div className="space-y-2">
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-semibold" style={{ color: cfgAuto.textColor }}>Resultados</span>
-                          <span className="text-[10px] font-black" style={{ color: cfgAuto.color }}>
-                            {Math.round(((derivedAuto.performance - 1) / 4) * 100)}%
-                          </span>
-                        </div>
-                        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${cfgAuto.color}25` }}>
-                          <div
-                            className="h-2 rounded-full transition-all duration-700"
-                            style={{ width: `${((derivedAuto.performance - 1) / 4) * 100}%`, backgroundColor: '#0d9488' }}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-semibold" style={{ color: cfgAuto.textColor }}>Valores</span>
-                          <span className="text-[10px] font-black" style={{ color: cfgAuto.color }}>
-                            {Math.round(((derivedAuto.potential - 1) / 4) * 100)}%
-                          </span>
-                        </div>
-                        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${cfgAuto.color}25` }}>
-                          <div
-                            className="h-2 rounded-full transition-all duration-700"
-                            style={{ width: `${((derivedAuto.potential - 1) / 4) * 100}%`, backgroundColor: '#2563eb' }}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    <p className="text-xs opacity-75 leading-snug" style={{ color: cfgAuto.textColor }}>{cfgAuto.description}</p>
                   </>
                 ) : null}
               </div>
