@@ -53,8 +53,12 @@ export default function Assign360Modal({ targetEmployee, onClose }: Assign360Mod
   const clientCount = existingForTarget.filter(a => a.role === 'client').length;
 
   const handleGenerate = () => {
-    const name = isAnonymous ? 'Anónimo' : (evaluatorName.trim() || (evaluatorEmployeeId ? EMPLOYEES.find(e => e.id === evaluatorEmployeeId)?.name ?? '' : ''));
-    if (!isAnonymous && !name) return;
+    const name = isAnonymous
+      ? 'Anónimo'
+      : selectedRole === 'self'
+        ? targetEmployee.name
+        : (evaluatorName.trim() || (evaluatorEmployeeId ? EMPLOYEES.find(e => e.id === evaluatorEmployeeId)?.name ?? '' : ''));
+    if (!isAnonymous && selectedRole !== 'self' && !name) return;
 
     const id = saveEval360Assignment({
       targetEmployeeId: targetEmployee.id,
