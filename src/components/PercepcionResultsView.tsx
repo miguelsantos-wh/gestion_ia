@@ -3,14 +3,26 @@ import { EMPLOYEES } from '../data/mockData';
 import { BOX_CONFIGS } from '../data/mockData';
 import { useEvaluationStore } from '../context/EvaluationContext';
 import { deriveBoxFromPerceptions, deriveBoxFromAutoPercepcion } from '../utils/evaluationDerivation';
-import { ChevronDown, ChevronUp, Eye, User } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, User, UserX } from 'lucide-react';
 import type { PerceptionPlacement } from '../types/evaluation';
 
-function levelLabel(level: string): string {
-  if (level === 'high') return 'Alto';
-  if (level === 'medium') return 'Medio';
-  return 'Bajo';
-}
+const GRID_LAYOUT: { potential: 'high' | 'medium' | 'low'; performance: 'low' | 'medium' | 'high' }[][] = [
+  [
+    { potential: 'high', performance: 'low' },
+    { potential: 'high', performance: 'medium' },
+    { potential: 'high', performance: 'high' },
+  ],
+  [
+    { potential: 'medium', performance: 'low' },
+    { potential: 'medium', performance: 'medium' },
+    { potential: 'medium', performance: 'high' },
+  ],
+  [
+    { potential: 'low', performance: 'low' },
+    { potential: 'low', performance: 'medium' },
+    { potential: 'low', performance: 'high' },
+  ],
+];
 
 function PlacementBadge({ perf, pot }: { perf: string; pot: string }) {
   const cfg = BOX_CONFIGS.find((b) => b.performanceLevel === perf && b.potentialLevel === pot);
@@ -25,45 +37,133 @@ function PlacementBadge({ perf, pot }: { perf: string; pot: string }) {
   );
 }
 
-function PerceptionRow({ placement, index }: { placement: PerceptionPlacement; index: number }) {
-  const cfg = BOX_CONFIGS.find(
-    (b) => b.performanceLevel === placement.performanceLevel && b.potentialLevel === placement.potentialLevel
-  );
+function MiniMatrix({
+  percList,
+  autoPerc,
+}: {
+  percList: PerceptionPlacement[] | undefined;
+  autoPerc: PerceptionPlacement | undefined;
+}) {
   return (
-    <div className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-      <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-        <span className="text-xs font-bold text-gray-500">{index + 1}</span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-gray-800 truncate">
-          {placement.evaluatorName || 'Anónimo'}
-        </div>
-        <div className="text-xs text-gray-400">
-          {new Date(placement.at).toLocaleDateString('es-MX', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </div>
-      </div>
-      <div className="shrink-0 text-right">
-        <div className="flex gap-1.5 items-center justify-end">
-          <span className="text-xs text-gray-500">Result: <strong>{levelLabel(placement.performanceLevel)}</strong></span>
-          <span className="text-gray-300">|</span>
-          <span className="text-xs text-gray-500">Val: <strong>{levelLabel(placement.potentialLevel)}</strong></span>
-        </div>
-        {cfg && (
-          <div className="mt-1">
-            <span
-              className="text-xs font-bold px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: cfg.bgColor, color: cfg.textColor }}
-            >
-              {cfg.code}
-            </span>
+    <div className="w-full">
+      <div className="flex items-stretch gap-2">
+        <div className="flex flex-col items-center justify-center w-5 shrink-0">
+          <div
+            className="flex flex-col items-center gap-1"
+            style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+          >
+            <span className="text-[10px] font-semibold text-gray-400 tracking-widest uppercase">Valores</span>
           </div>
-        )}
+        </div>
+
+        <div className="flex flex-col gap-1 w-full">
+          <div className="flex gap-1">
+            <div className="flex flex-col justify-between w-10 shrink-0 text-right pr-1.5">
+              <span className="text-[10px] font-medium text-gray-400 py-0.5">Alto</span>
+              <span className="text-[10px] font-medium text-gray-400 py-0.5">Medio</span>
+              <span className="text-[10px] font-medium text-gray-400 py-0.5">Bajo</span>
+            </div>
+
+            <div className="flex-1 grid grid-rows-3 gap-1">
+              {GRID_LAYOUT.map((row, rowIdx) => (
+                <div key={rowIdx} className="grid grid-cols-3 gap-1">
+                  {row.map((cell, colIdx) => {
+                    const config = BOX_CONFIGS.find(
+                      (b) => b.potentialLevel === cell.potential && b.performanceLevel === cell.performance
+                    );
+                    if (!config) return null;
+
+                    const evaluatorsHere = (percList ?? []).filter(
+                      (p) => p.performanceLevel === cell.performance && p.potentialLevel === cell.potential
+                    );
+                    const autoHere =
+                      autoPerc &&
+                      autoPerc.performanceLevel === cell.performance &&
+                      autoPerc.potentialLevel === cell.potential;
+
+                    return (
+                      <div
+                        key={colIdx}
+                        className="relative rounded-lg border-2 min-h-[72px] p-1.5 flex flex-col justify-between"
+                        style={{
+                          backgroundColor: `${config.bgColor}88`,
+                          borderColor: `${config.color}40`,
+                        }}
+                      >
+                        <div>
+                          <div className="flex items-baseline gap-1 flex-wrap">
+                            <span className="text-[10px] font-black leading-none" style={{ color: config.textColor }}>
+                              {config.code}
+                            </span>
+                            <span className="text-[9px] font-bold leading-tight opacity-90" style={{ color: config.textColor }}>
+                              {config.label}
+                            </span>
+                          </div>
+                          <div className="text-[8px] mt-0.5 opacity-70 leading-snug" style={{ color: config.textColor }}>
+                            {config.description}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {evaluatorsHere.map((pl, i) => (
+                            <div
+                              key={`${pl.at}-${i}`}
+                              title={pl.evaluatorName || 'Anónimo'}
+                              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                              style={{ backgroundColor: config.color }}
+                            >
+                              {pl.evaluatorName
+                                ? pl.evaluatorName.charAt(0).toUpperCase()
+                                : <UserX size={10} />}
+                            </div>
+                          ))}
+                          {autoHere && (
+                            <div
+                              title="Autoevaluación"
+                              className="w-6 h-6 rounded-full flex items-center justify-center border-2 border-blue-500 bg-blue-100 shrink-0"
+                            >
+                              <User size={10} className="text-blue-600" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex ml-10 gap-1 mt-0.5">
+            <div className="flex-1 grid grid-cols-3 gap-1 text-center">
+              <span className="text-[10px] font-medium text-gray-400">Bajo</span>
+              <span className="text-[10px] font-medium text-gray-400">Medio</span>
+              <span className="text-[10px] font-medium text-gray-400">Alto</span>
+            </div>
+          </div>
+          <div className="flex justify-center ml-10 mt-0.5">
+            <span className="text-[10px] font-semibold text-gray-400 tracking-widest uppercase">Resultados</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2 items-center text-[10px] text-gray-500">
+        <div className="flex items-center gap-1">
+          <div className="w-5 h-5 rounded-full bg-gray-400 flex items-center justify-center text-white text-[9px] font-bold">A</div>
+          <span>Percepción externa</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-5 h-5 rounded-full border-2 border-blue-500 bg-blue-100 flex items-center justify-center">
+            <User size={9} className="text-blue-600" />
+          </div>
+          <span>Autoevaluación</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center">
+            <UserX size={9} className="text-gray-500" />
+          </div>
+          <span>Anónimo</span>
+        </div>
       </div>
     </div>
   );
@@ -89,11 +189,6 @@ function EmployeePercepcionCard({
   const cfg = derivedPerc
     ? BOX_CONFIGS.find(
         (b) => b.performanceLevel === derivedPerc.performanceLevel && b.potentialLevel === derivedPerc.potentialLevel
-      )
-    : null;
-  const cfgAuto = derivedAuto
-    ? BOX_CONFIGS.find(
-        (b) => b.performanceLevel === derivedAuto.performanceLevel && b.potentialLevel === derivedAuto.potentialLevel
       )
     : null;
 
@@ -138,55 +233,7 @@ function EmployeePercepcionCard({
 
       {open && (
         <div className="border-t border-gray-100 p-4 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-gray-50 rounded-xl p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Eye size={13} className="text-teal-600" />
-                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Percepciones de otros</span>
-              </div>
-              {percCount === 0 ? (
-                <p className="text-xs text-gray-400 italic">Ninguna percepción registrada aún.</p>
-              ) : (
-                <>
-                  {derivedPerc && cfg && (
-                    <div className="mb-2 space-y-1">
-                      <div className="text-xs font-semibold text-gray-700">
-                        Promedio:{' '}
-                        <span className="font-black" style={{ color: cfg.color }}>{cfg.code}</span>{' '}
-                        <span style={{ color: cfg.textColor }}>{cfg.label}</span>
-                      </div>
-                    </div>
-                  )}
-                  <div className="space-y-0">
-                    {percList!.map((pl, i) => (
-                      <PerceptionRow key={`${pl.at}-${i}`} placement={pl} index={i} />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="bg-blue-50 rounded-xl p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <User size={13} className="text-blue-600" />
-                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Autoevaluación</span>
-              </div>
-              {!autoPerc ? (
-                <p className="text-xs text-gray-400 italic">No ha completado su autoevaluación.</p>
-              ) : (
-                <>
-                  {cfgAuto && (
-                    <div className="mb-2 text-xs font-semibold text-gray-700">
-                      Se ubicó en:{' '}
-                      <span className="font-black" style={{ color: cfgAuto.color }}>{cfgAuto.code}</span>{' '}
-                      <span style={{ color: cfgAuto.textColor }}>{cfgAuto.label}</span>
-                    </div>
-                  )}
-                  <PerceptionRow placement={autoPerc} index={0} />
-                </>
-              )}
-            </div>
-          </div>
+          <MiniMatrix percList={percList} autoPerc={autoPerc} />
 
           {percCount > 0 && derivedPerc && derivedAuto && (
             <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
