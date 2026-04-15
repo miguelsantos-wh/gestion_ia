@@ -14,23 +14,31 @@ import { STORAGE_KEY } from '../types/evaluation';
 function loadStorage(): EvaluationStorage {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { threeSixty: {}, percepcion: {} };
+    if (!raw) return { threeSixty: {}, percepcion: {}, autoPercepcion: {} };
     const p = JSON.parse(raw) as EvaluationStorage;
     return {
       threeSixty: p.threeSixty ?? {},
       percepcion: p.percepcion ?? {},
+      autoPercepcion: p.autoPercepcion ?? {},
     };
   } catch {
-    return { threeSixty: {}, percepcion: {} };
+    return { threeSixty: {}, percepcion: {}, autoPercepcion: {} };
   }
 }
 
 interface EvaluationContextValue {
   threeSixty: Record<string, Employee360Data>;
   percepcion: Record<string, PerceptionPlacement[]>;
+  autoPercepcion: Record<string, PerceptionPlacement>;
   saveSelfEvaluation: (employeeId: string, scores: number[]) => void;
   savePeerEvaluation: (employeeId: string, evaluatorName: string, scores: number[]) => void;
   savePerceptionPlacement: (
+    employeeId: string,
+    evaluatorName: string,
+    performanceLevel: PerformanceLevel,
+    potentialLevel: PotentialLevel
+  ) => void;
+  saveAutoPercepcion: (
     employeeId: string,
     evaluatorName: string,
     performanceLevel: PerformanceLevel,
@@ -122,8 +130,36 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
     [persist]
   );
 
+  const saveAutoPercepcion = useCallback(
+    (
+      employeeId: string,
+      evaluatorName: string,
+      performanceLevel: PerformanceLevel,
+      potentialLevel: PotentialLevel
+    ) => {
+      const row: PerceptionPlacement = {
+        evaluatorName: evaluatorName.trim() || 'Yo',
+        performanceLevel,
+        potentialLevel,
+        at: new Date().toISOString(),
+      };
+      setStore((prev) => {
+        const next: EvaluationStorage = {
+          ...prev,
+          autoPercepcion: {
+            ...prev.autoPercepcion,
+            [employeeId]: row,
+          },
+        };
+        persist(next);
+        return next;
+      });
+    },
+    [persist]
+  );
+
   const resetAll = useCallback(() => {
-    const empty: EvaluationStorage = { threeSixty: {}, percepcion: {} };
+    const empty: EvaluationStorage = { threeSixty: {}, percepcion: {}, autoPercepcion: {} };
     persist(empty);
     setStore(empty);
   }, [persist]);
@@ -132,12 +168,14 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
     () => ({
       threeSixty: store.threeSixty,
       percepcion: store.percepcion,
+      autoPercepcion: store.autoPercepcion,
       saveSelfEvaluation,
       savePeerEvaluation,
       savePerceptionPlacement,
+      saveAutoPercepcion,
       resetAll,
     }),
-    [store.threeSixty, store.percepcion, saveSelfEvaluation, savePeerEvaluation, savePerceptionPlacement, resetAll]
+    [store.threeSixty, store.percepcion, store.autoPercepcion, saveSelfEvaluation, savePeerEvaluation, savePerceptionPlacement, saveAutoPercepcion, resetAll]
   );
 
   return <EvaluationContext.Provider value={value}>{children}</EvaluationContext.Provider>;

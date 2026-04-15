@@ -5,7 +5,11 @@ import IndividualView from './components/IndividualView';
 import Evaluation360View from './components/Evaluation360View';
 import PublicEval360Page from './components/PublicEval360Page';
 import PublicPercepcionPage from './components/PublicPercepcionPage';
-import { isEval360Hash, isPercepcionHash } from './utils/hashRoute';
+import PublicAutoPercepcionPage from './components/PublicAutoPercepcionPage';
+import MiPercepcionPage from './components/MiPercepcionPage';
+import { isEval360Hash, isPercepcionHash, isAutoPercepcionHash } from './utils/hashRoute';
+import { getPathFromLocationHash } from './utils/hashRoute';
+import { useEvaluationStore } from './context/EvaluationContext';
 import {
   BarChart3,
   Users,
@@ -15,6 +19,11 @@ import {
   AlertTriangle,
   ClipboardList,
 } from 'lucide-react';
+
+function isMiPercepcionHash(hash: string): boolean {
+  const p = getPathFromLocationHash(hash);
+  return p === '/mis-resultados' || p.startsWith('/mis-resultados/');
+}
 
 const TABS: { id: ViewType; label: string; icon: React.ReactNode }[] = [
   { id: 'overview', label: 'Resumen', icon: <BarChart3 size={16} /> },
@@ -50,50 +59,52 @@ function StatCard({
 }
 
 function OverviewView() {
+  const { percepcion, autoPercepcion } = useEvaluationStore();
+
   const total = EMPLOYEES.length;
-  const stars = EMPLOYEES.filter((e) => e.potentialLevel === 'high' && e.performanceLevel === 'high').length;
-  const highPotential = EMPLOYEES.filter((e) => e.potentialLevel === 'high').length;
-  const highPerf = EMPLOYEES.filter((e) => e.performanceLevel === 'high').length;
-  const lowPerf = EMPLOYEES.filter((e) => e.performanceLevel === 'low' && e.potentialLevel === 'low').length;
+
+  const employeesWithPerc = EMPLOYEES.filter(
+    (e) => (percepcion[e.id]?.length ?? 0) > 0
+  ).length;
+  const employeesWithAuto = EMPLOYEES.filter((e) => !!autoPercepcion[e.id]).length;
+  const employeesEvaluated = EMPLOYEES.filter(
+    (e) => (percepcion[e.id]?.length ?? 0) > 0 || !!autoPercepcion[e.id]
+  ).length;
 
   const departments = Array.from(new Set(EMPLOYEES.map((e) => e.department)));
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <StatCard icon={<Users size={18} />} label="Total Empleados" value={total} sub="en evaluacion" color="#2563eb" />
-        <StatCard icon={<Award size={18} />} label="Casilla A (Estrella)" value={stars} sub="100% valores · 100% resultados" color="#059669" />
-        <StatCard icon={<TrendingUp size={18} />} label="Valores altos" value={highPotential} sub="eje vertical alto" color="#0d9488" />
-        <StatCard icon={<BarChart3 size={18} />} label="Resultados altos" value={highPerf} sub="eje horizontal alto" color="#1d4ed8" />
-        <StatCard icon={<AlertTriangle size={18} />} label="Bajo Rendimiento" value={lowPerf} sub="requieren plan mejora" color="#dc2626" />
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon={<Users size={18} />} label="Total Colaboradores" value={total} sub="registrados en el sistema" color="#2563eb" />
+        <StatCard icon={<Award size={18} />} label="Con evaluación" value={employeesEvaluated} sub="con al menos un dato" color="#059669" />
+        <StatCard icon={<TrendingUp size={18} />} label="Con percepción externa" value={employeesWithPerc} sub="evaluados por otros" color="#0d9488" />
+        <StatCard icon={<AlertTriangle size={18} />} label="Con autoevaluación" value={employeesWithAuto} sub="se ubicaron en la matriz" color="#1d4ed8" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h3 className="text-sm font-bold text-gray-700 mb-4">Distribucion 9-Box</h3>
-          <div className="space-y-2.5">
-            {BOX_CONFIGS.map((cfg) => {
-              const count = EMPLOYEES.filter(
-                (e) => e.potentialLevel === cfg.potentialLevel && e.performanceLevel === cfg.performanceLevel
+          <h3 className="text-sm font-bold text-gray-700 mb-4">Estado de evaluaciones por área</h3>
+          <div className="space-y-3">
+            {departments.map((dept) => {
+              const emps = EMPLOYEES.filter((e) => e.department === dept);
+              const evaluated = emps.filter(
+                (e) => (percepcion[e.id]?.length ?? 0) > 0 || !!autoPercepcion[e.id]
               ).length;
-              const pct = (count / total) * 100;
+              const pct = emps.length > 0 ? (evaluated / emps.length) * 100 : 0;
               return (
-                <div key={cfg.id} className="flex items-center gap-3">
-                  <div
-                    className="w-3 h-3 rounded-sm shrink-0"
-                    style={{ backgroundColor: cfg.color }}
-                  />
-                  <span className="text-xs font-medium text-gray-600 w-36 shrink-0">
-                    <span className="font-bold">{cfg.code}</span> {cfg.label}
-                  </span>
+                <div key={dept} className="flex items-center gap-3">
+                  <div className="w-7 h-7 bg-gradient-to-br from-slate-600 to-slate-800 rounded-lg flex items-center justify-center shrink-0">
+                    <span className="text-white text-xs font-bold">{dept.slice(0, 2).toUpperCase()}</span>
+                  </div>
+                  <span className="text-xs font-medium text-gray-700 w-32 shrink-0">{dept}</span>
                   <div className="flex-1 bg-gray-100 rounded-full h-2.5">
                     <div
                       className="h-2.5 rounded-full transition-all duration-700"
-                      style={{ width: `${pct}%`, backgroundColor: cfg.color }}
+                      style={{ width: `${pct}%`, backgroundColor: pct === 100 ? '#059669' : pct > 0 ? '#2563eb' : '#e5e7eb' }}
                     />
                   </div>
-                  <span className="text-xs font-bold text-gray-700 w-4 text-right">{count}</span>
-                  <span className="text-xs text-gray-400 w-10">({pct.toFixed(0)}%)</span>
+                  <span className="text-xs font-bold text-gray-700 w-10 text-right">{evaluated}/{emps.length}</span>
                 </div>
               );
             })}
@@ -101,41 +112,40 @@ function OverviewView() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h3 className="text-sm font-bold text-gray-700 mb-4">Promedio por área (resultados y valores)</h3>
-          <div className="space-y-3">
-            {departments.map((dept) => {
-              const emps = EMPLOYEES.filter((e) => e.department === dept);
-              const avgP = emps.reduce((s, e) => s + e.performance, 0) / emps.length;
-              const avgPot = emps.reduce((s, e) => s + e.potential, 0) / emps.length;
+          <h3 className="text-sm font-bold text-gray-700 mb-4">Colaboradores registrados</h3>
+          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+            {EMPLOYEES.map((e) => {
+              const hasPerc = (percepcion[e.id]?.length ?? 0) > 0;
+              const hasAuto = !!autoPercepcion[e.id];
               return (
-                <div key={dept} className="flex items-center gap-3">
-                  <div className="w-7 h-7 bg-gradient-to-br from-slate-600 to-slate-800 rounded-lg flex items-center justify-center shrink-0">
-                    <span className="text-white text-xs font-bold">{dept.slice(0, 2).toUpperCase()}</span>
+                <div key={e.id} className="flex items-center gap-3 py-1.5">
+                  <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
+                    {e.avatar}
                   </div>
-                  <span className="text-xs font-medium text-gray-700 w-28 shrink-0">{dept}</span>
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400 w-14">Result.</span>
-                      <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-                        <div
-                          className="h-1.5 rounded-full"
-                          style={{ width: `${(avgP / 5) * 100}%`, backgroundColor: '#2563eb' }}
-                        />
-                      </div>
-                      <span className="text-xs font-bold text-blue-700 w-7">{avgP.toFixed(1)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400 w-14">Valor.</span>
-                      <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-                        <div
-                          className="h-1.5 rounded-full"
-                          style={{ width: `${(avgPot / 5) * 100}%`, backgroundColor: '#059669' }}
-                        />
-                      </div>
-                      <span className="text-xs font-bold text-emerald-700 w-7">{avgPot.toFixed(1)}</span>
-                    </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-semibold text-gray-800 truncate">{e.name}</div>
+                    <div className="text-xs text-gray-400 truncate">{e.position}</div>
                   </div>
-                  <span className="text-xs text-gray-400 shrink-0">{emps.length} empl.</span>
+                  <div className="flex gap-1 shrink-0">
+                    {hasPerc ? (
+                      <span className="text-xs bg-teal-50 text-teal-700 border border-teal-100 rounded-full px-2 py-0.5 font-medium">
+                        {percepcion[e.id].length} perc.
+                      </span>
+                    ) : (
+                      <span className="text-xs bg-gray-50 text-gray-400 border border-gray-100 rounded-full px-2 py-0.5">
+                        sin perc.
+                      </span>
+                    )}
+                    {hasAuto ? (
+                      <span className="text-xs bg-blue-50 text-blue-700 border border-blue-100 rounded-full px-2 py-0.5 font-medium">
+                        auto
+                      </span>
+                    ) : (
+                      <span className="text-xs bg-gray-50 text-gray-400 border border-gray-100 rounded-full px-2 py-0.5">
+                        sin auto
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -231,11 +241,11 @@ function MainApp() {
             {activeTab === 'eval360' && 'Evaluación 360 y percepción'}
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            {activeTab === 'overview' && `Panorama general — ${EMPLOYEES.length} empleados evaluados`}
+            {activeTab === 'overview' && `Panorama general — ${EMPLOYEES.length} colaboradores registrados`}
             {activeTab === 'individual' &&
-              'Filtra por departamento y tipo de evaluación; la matriz refleja Metrika, percepción o autoevaluación 360.'}
+              'Visualiza la matriz según las evaluaciones recibidas. Solo aparecen colaboradores con al menos una evaluación.'}
             {activeTab === 'eval360' &&
-              'Plantilla reutilizable, enlaces para autoevaluación y evaluadores, y percepción rápida en la matriz 9-Box.'}
+              'Plantilla reutilizable, enlaces para evaluación 360, percepción y autoevaluación en la matriz 9-Box.'}
           </p>
         </div>
 
@@ -264,8 +274,14 @@ export default function App() {
   if (isEval360Hash(hash)) {
     return <PublicEval360Page key={hash || 'eval360'} routeHash={hash} />;
   }
+  if (isAutoPercepcionHash(hash)) {
+    return <PublicAutoPercepcionPage key={hash || 'autopercepcion'} routeHash={hash} />;
+  }
   if (isPercepcionHash(hash)) {
     return <PublicPercepcionPage key={hash || 'perc'} routeHash={hash} />;
+  }
+  if (isMiPercepcionHash(hash)) {
+    return <MiPercepcionPage key={hash || 'misresultados'} routeHash={hash} />;
   }
 
   return <MainApp />;

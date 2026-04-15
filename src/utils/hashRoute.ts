@@ -29,6 +29,11 @@ export function isPercepcionHash(hash: string): boolean {
   );
 }
 
+export function isAutoPercepcionHash(hash: string): boolean {
+  const p = getPathFromLocationHash(hash);
+  return p === '/eval-autopercepcion' || p.startsWith('/eval-autopercepcion/');
+}
+
 /** Hash efectivo: el del padre o, si viene vacío, el de window (por si el estado de React va detrás). */
 export function effectiveLocationHash(routeHashFromParent: string): string {
   if (typeof window === 'undefined') {

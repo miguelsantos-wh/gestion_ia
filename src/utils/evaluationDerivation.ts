@@ -119,28 +119,49 @@ export function deriveMetrikaBox(
   };
 }
 
+export function deriveBoxFromAutoPercepcion(placement: PerceptionPlacement | undefined): {
+  performanceLevel: PerformanceLevel;
+  potentialLevel: PotentialLevel;
+  performance: number;
+  potential: number;
+} | null {
+  if (!placement) return null;
+  const perfN = levelToNum(placement.performanceLevel);
+  const potN = levelToNum(placement.potentialLevel);
+  return {
+    performance: 1 + (perfN - 1) * 2,
+    potential: 1 + (potN - 1) * 2,
+    performanceLevel: placement.performanceLevel,
+    potentialLevel: placement.potentialLevel,
+  };
+}
+
 export function employeeForLens(
   employee: Employee,
   lens: EvaluationLens,
   threeSixty: Record<string, Employee360Data>,
-  percepcion: Record<string, PerceptionPlacement[]>
-): Employee {
+  percepcion: Record<string, PerceptionPlacement[]>,
+  autoPercepcion?: Record<string, PerceptionPlacement>
+): Employee | null {
   const d360 = threeSixty[employee.id];
   const perc = percepcion[employee.id];
+  const autop = autoPercepcion?.[employee.id];
 
   if (lens === 'metrika') {
+    const hasData = d360?.self || (d360?.peers?.length ?? 0) > 0;
+    if (!hasData) return null;
     const m = deriveMetrikaBox(employee, d360);
     return { ...employee, ...m };
   }
   if (lens === 'autoevaluacion') {
-    const a = deriveBoxFrom360(d360, 'self');
+    const a = deriveBoxFromAutoPercepcion(autop);
     if (a) return { ...employee, ...a };
-    return { ...employee };
+    return null;
   }
   if (lens === 'percepcion') {
     const p = deriveBoxFromPerceptions(perc);
     if (p) return { ...employee, ...p };
-    return { ...employee };
+    return null;
   }
-  return { ...employee };
+  return null;
 }

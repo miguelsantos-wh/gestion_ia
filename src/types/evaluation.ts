@@ -40,9 +40,10 @@ export interface PerceptionPlacement {
   at: string;
 }
 
-export const STORAGE_KEY = 'ninebox-evaluations-v1';
+export const STORAGE_KEY = 'ninebox-evaluations-v2';
 
 export interface EvaluationStorage {
   threeSixty: Record<string, Employee360Data>;
   percepcion: Record<string, PerceptionPlacement[]>;
+  autoPercepcion: Record<string, PerceptionPlacement>;
 }
