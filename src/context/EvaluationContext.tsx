@@ -70,22 +70,61 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   }, []);
 
+  const triggerSync = useCallback((store: EvaluationStorage) => {
+    const next: EvaluationStorage = {
+      ...store,
+      eval360Assignments: (store.eval360Assignments ?? []).map((assignment) => {
+        if (assignment.completedAt) return assignment;
+
+        const employeeData = store.threeSixty[assignment.targetEmployeeId];
+        if (!employeeData) return assignment;
+
+        if (assignment.role === 'self' && employeeData.self) {
+          return { ...assignment, completedAt: new Date().toISOString(), scores: employeeData.self };
+        }
+
+        if (assignment.role !== 'self') {
+          const normalizedAssignmentName = assignment.evaluatorName.trim().toLowerCase();
+
+          let matchingPeer = employeeData.peers.find(
+            (p) => p.evaluatorName.trim().toLowerCase() === normalizedAssignmentName
+          );
+
+          if (!matchingPeer && assignment.isAnonymous) {
+            const lastUnmatchedPeer = employeeData.peers.find((p) => p.evaluatorName === 'Anónimo');
+            if (lastUnmatchedPeer) {
+              matchingPeer = lastUnmatchedPeer;
+            }
+          }
+
+          if (matchingPeer) {
+            return { ...assignment, completedAt: matchingPeer.at, scores: matchingPeer.scores };
+          }
+        }
+
+        return assignment;
+      }),
+    };
+    return next;
+  }, []);
+
   const saveSelfEvaluation = useCallback(
     (employeeId: string, scores: number[]) => {
       setStore((prev) => {
         const cur = prev.threeSixty[employeeId] ?? { peers: [] };
-        const next: EvaluationStorage = {
+        let next: EvaluationStorage = {
           ...prev,
           threeSixty: {
             ...prev.threeSixty,
             [employeeId]: { ...cur, self: scores },
           },
         };
+        next = triggerSync(next);
         persist(next);
         return next;
       });
     },
-    [persist]
+    [persist, triggerSync]
   );
 
   const savePeerEvaluation = useCallback(
@@ -97,18 +136,19 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
       };
       setStore((prev) => {
         const cur = prev.threeSixty[employeeId] ?? { peers: [] };
-        const next: EvaluationStorage = {
+        let next: EvaluationStorage = {
           ...prev,
           threeSixty: {
             ...prev.threeSixty,
             [employeeId]: { ...cur, peers: [...cur.peers, sub] },
           },
         };
+        next = triggerSync(next);
         persist(next);
         return next;
       });
     },
-    [persist]
+    [persist, triggerSync]
   );
 
   const savePerceptionPlacement = useCallback(
@@ -262,34 +302,11 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
 
   const syncCompletedEvaluations = useCallback(() => {
     setStore((prev) => {
-      const next: EvaluationStorage = {
-        ...prev,
-        eval360Assignments: (prev.eval360Assignments ?? []).map((assignment) => {
-          if (assignment.completedAt) return assignment;
-
-          const employeeData = prev.threeSixty[assignment.targetEmployeeId];
-          if (!employeeData) return assignment;
-
-          if (assignment.role === 'self' && employeeData.self) {
-            return { ...assignment, completedAt: new Date().toISOString(), scores: employeeData.self };
-          }
-
-          if (assignment.role !== 'self') {
-            const matchingPeer = employeeData.peers.find(
-              (p) => p.evaluatorName === assignment.evaluatorName
-            );
-            if (matchingPeer) {
-              return { ...assignment, completedAt: matchingPeer.at, scores: matchingPeer.scores };
-            }
-          }
-
-          return assignment;
-        }),
-      };
+      const next = triggerSync(prev);
       persist(next);
       return next;
     });
-  }, [persist]);
+  }, [persist, triggerSync]);
 
   const resetAll = useCallback(() => {
     const empty: EvaluationStorage = { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [] };
