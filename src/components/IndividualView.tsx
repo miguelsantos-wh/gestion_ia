@@ -183,15 +183,29 @@ export default function IndividualView({ employees }: IndividualViewProps) {
                       >
                         {cfg ? `${cfg.code} · ${cfg.label}` : ''}
                       </span>
-                      <div className="text-right">
-                        <div className="flex gap-2">
-                          <div>
-                            <div className="text-xs font-bold text-gray-700">{emp.performance.toFixed(1)}</div>
-                            <div className="text-xs text-gray-400">result.</div>
+                      <div className="hidden sm:flex flex-col gap-1 w-28">
+                        <div>
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-[10px] text-gray-400">Resultados</span>
+                            <span className="text-[10px] font-bold text-gray-600">{Math.round(((emp.performance - 1) / 4) * 100)}%</span>
                           </div>
-                          <div>
-                            <div className="text-xs font-bold text-gray-700">{emp.potential.toFixed(1)}</div>
-                            <div className="text-xs text-gray-400">valor.</div>
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-1.5 rounded-full transition-all"
+                              style={{ width: `${((emp.performance - 1) / 4) * 100}%`, backgroundColor: '#0d9488' }}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-[10px] text-gray-400">Valores</span>
+                            <span className="text-[10px] font-bold text-gray-600">{Math.round(((emp.potential - 1) / 4) * 100)}%</span>
+                          </div>
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-1.5 rounded-full transition-all"
+                              style={{ width: `${((emp.potential - 1) / 4) * 100}%`, backgroundColor: '#2563eb' }}
+                            />
                           </div>
                         </div>
                       </div>
