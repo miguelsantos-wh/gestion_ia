@@ -7,11 +7,14 @@ import { BOX_CONFIGS } from '../data/mockData';
 import { effectiveLocationHash } from '../utils/hashRoute';
 import { Users, CheckCircle } from 'lucide-react';
 
-function parseEmployeeIdFromHash(routeHash: string): string | null {
+function parseParamsFromHash(routeHash: string): { employeeId: string | null; evaluatorName: string | null } {
   const raw = routeHash.replace(/^#/, '') || '';
   const q = raw.includes('?') ? raw.split('?')[1] : '';
   const params = new URLSearchParams(q);
-  return params.get('employeeId');
+  return {
+    employeeId: params.get('employeeId'),
+    evaluatorName: params.get('evaluatorName'),
+  };
 }
 
 interface PublicPercepcionPageProps {
@@ -20,11 +23,11 @@ interface PublicPercepcionPageProps {
 
 export default function PublicPercepcionPage({ routeHash }: PublicPercepcionPageProps) {
   const fullHash = effectiveLocationHash(routeHash);
-  const employeeId = useMemo(() => parseEmployeeIdFromHash(fullHash), [fullHash]);
+  const { employeeId, evaluatorName: prefilledName } = useMemo(() => parseParamsFromHash(fullHash), [fullHash]);
   const { savePerceptionPlacement } = useEvaluationStore();
   const employee = EMPLOYEES.find((e) => e.id === employeeId);
 
-  const [evaluatorName, setEvaluatorName] = useState('');
+  const [evaluatorName, setEvaluatorName] = useState(prefilledName ?? '');
   const [pending, setPending] = useState<{ performanceLevel: PerformanceLevel; potentialLevel: PotentialLevel } | null>(
     null
   );
@@ -103,14 +106,29 @@ export default function PublicPercepcionPage({ routeHash }: PublicPercepcionPage
         </p>
 
         <div className="mb-4">
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tu nombre (opcional)</label>
-          <input
-            type="text"
-            value={evaluatorName}
-            onChange={(e) => setEvaluatorName(e.target.value)}
-            placeholder="Quién responde"
-            className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500"
-          />
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Tu nombre {prefilledName ? '(asignado)' : '(opcional)'}
+          </label>
+          {prefilledName ? (
+            <div className="mt-1 flex items-center gap-2 px-3 py-2 bg-teal-50 border border-teal-200 rounded-xl">
+              <span className="text-sm font-semibold text-teal-800">{evaluatorName}</span>
+              <button
+                type="button"
+                onClick={() => setEvaluatorName('')}
+                className="ml-auto text-[10px] text-teal-600 hover:underline"
+              >
+                Cambiar a anónimo
+              </button>
+            </div>
+          ) : (
+            <input
+              type="text"
+              value={evaluatorName}
+              onChange={(e) => setEvaluatorName(e.target.value)}
+              placeholder="Quién responde"
+              className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+          )}
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">

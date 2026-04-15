@@ -1,8 +1,8 @@
 import { useLayoutEffect, useState } from 'react';
 import { EMPLOYEES, BOX_CONFIGS } from './data/mockData';
-import { ViewType } from './types';
 import IndividualView from './components/IndividualView';
 import Evaluation360View from './components/Evaluation360View';
+import EmployeeAdminPanel from './components/EmployeeAdminPanel';
 import PublicEval360Page from './components/PublicEval360Page';
 import PublicPercepcionPage from './components/PublicPercepcionPage';
 import PublicAutoPercepcionPage from './components/PublicAutoPercepcionPage';
@@ -10,25 +10,21 @@ import MiPercepcionPage from './components/MiPercepcionPage';
 import { isEval360Hash, isPercepcionHash, isAutoPercepcionHash } from './utils/hashRoute';
 import { getPathFromLocationHash } from './utils/hashRoute';
 import { useEvaluationStore } from './context/EvaluationContext';
-import {
-  BarChart3,
-  Users,
-  Grid3x3 as Grid3X3,
-  TrendingUp,
-  Award,
-  AlertTriangle,
-  ClipboardList,
-} from 'lucide-react';
+import { BarChart3, Users, Grid3x3 as Grid3X3, TrendingUp, Award, ClipboardList, CircleUser as UserCircle2, Eye } from 'lucide-react';
 
 function isMiPercepcionHash(hash: string): boolean {
   const p = getPathFromLocationHash(hash);
   return p === '/mis-resultados' || p.startsWith('/mis-resultados/');
 }
 
-const TABS: { id: ViewType; label: string; icon: React.ReactNode }[] = [
-  { id: 'overview', label: 'Resumen', icon: <BarChart3 size={16} /> },
-  { id: 'individual', label: 'Individual', icon: <Grid3X3 size={16} /> },
-  { id: 'eval360', label: 'Evaluación 360', icon: <ClipboardList size={16} /> },
+type AdminView = 'overview' | 'empleados' | 'matriz' | 'resultados' | 'eval360';
+
+const ADMIN_TABS: { id: AdminView; label: string; icon: React.ReactNode; group?: string }[] = [
+  { id: 'overview', label: 'Resumen', icon: <BarChart3 size={15} /> },
+  { id: 'empleados', label: 'Colaboradores', icon: <Users size={15} /> },
+  { id: 'matriz', label: 'Matriz 9-Box', icon: <Grid3X3 size={15} /> },
+  { id: 'resultados', label: 'Resultados', icon: <Eye size={15} /> },
+  { id: 'eval360', label: 'Evaluación 360', icon: <ClipboardList size={15} /> },
 ];
 
 function StatCard({
@@ -62,29 +58,25 @@ function OverviewView() {
   const { percepcion, autoPercepcion } = useEvaluationStore();
 
   const total = EMPLOYEES.length;
-
-  const employeesWithPerc = EMPLOYEES.filter(
-    (e) => (percepcion[e.id]?.length ?? 0) > 0
-  ).length;
+  const employeesWithPerc = EMPLOYEES.filter((e) => (percepcion[e.id]?.length ?? 0) > 0).length;
   const employeesWithAuto = EMPLOYEES.filter((e) => !!autoPercepcion[e.id]).length;
   const employeesEvaluated = EMPLOYEES.filter(
     (e) => (percepcion[e.id]?.length ?? 0) > 0 || !!autoPercepcion[e.id]
   ).length;
-
   const departments = Array.from(new Set(EMPLOYEES.map((e) => e.department)));
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard icon={<Users size={18} />} label="Total Colaboradores" value={total} sub="registrados en el sistema" color="#2563eb" />
         <StatCard icon={<Award size={18} />} label="Con evaluación" value={employeesEvaluated} sub="con al menos un dato" color="#059669" />
         <StatCard icon={<TrendingUp size={18} />} label="Con percepción externa" value={employeesWithPerc} sub="evaluados por otros" color="#0d9488" />
-        <StatCard icon={<AlertTriangle size={18} />} label="Con autoevaluación" value={employeesWithAuto} sub="se ubicaron en la matriz" color="#1d4ed8" />
+        <StatCard icon={<UserCircle2 size={18} />} label="Con autoevaluación" value={employeesWithAuto} sub="se ubicaron en la matriz" color="#1d4ed8" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h3 className="text-sm font-bold text-gray-700 mb-4">Estado de evaluaciones por área</h3>
+          <h3 className="text-sm font-bold text-gray-700 mb-4">Estado por área</h3>
           <div className="space-y-3">
             {departments.map((dept) => {
               const emps = EMPLOYEES.filter((e) => e.department === dept);
@@ -97,7 +89,7 @@ function OverviewView() {
                   <div className="w-7 h-7 bg-gradient-to-br from-slate-600 to-slate-800 rounded-lg flex items-center justify-center shrink-0">
                     <span className="text-white text-xs font-bold">{dept.slice(0, 2).toUpperCase()}</span>
                   </div>
-                  <span className="text-xs font-medium text-gray-700 w-32 shrink-0">{dept}</span>
+                  <span className="text-xs font-medium text-gray-700 w-28 shrink-0">{dept}</span>
                   <div className="flex-1 bg-gray-100 rounded-full h-2.5">
                     <div
                       className="h-2.5 rounded-full transition-all duration-700"
@@ -112,7 +104,7 @@ function OverviewView() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h3 className="text-sm font-bold text-gray-700 mb-4">Colaboradores registrados</h3>
+          <h3 className="text-sm font-bold text-gray-700 mb-4">Colaboradores</h3>
           <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
             {EMPLOYEES.map((e) => {
               const hasPerc = (percepcion[e.id]?.length ?? 0) > 0;
@@ -132,18 +124,12 @@ function OverviewView() {
                         {percepcion[e.id].length} perc.
                       </span>
                     ) : (
-                      <span className="text-xs bg-gray-50 text-gray-400 border border-gray-100 rounded-full px-2 py-0.5">
-                        sin perc.
-                      </span>
+                      <span className="text-xs bg-gray-50 text-gray-400 border border-gray-100 rounded-full px-2 py-0.5">sin perc.</span>
                     )}
                     {hasAuto ? (
-                      <span className="text-xs bg-blue-50 text-blue-700 border border-blue-100 rounded-full px-2 py-0.5 font-medium">
-                        auto
-                      </span>
+                      <span className="text-xs bg-blue-50 text-blue-700 border border-blue-100 rounded-full px-2 py-0.5 font-medium">auto</span>
                     ) : (
-                      <span className="text-xs bg-gray-50 text-gray-400 border border-gray-100 rounded-full px-2 py-0.5">
-                        sin auto
-                      </span>
+                      <span className="text-xs bg-gray-50 text-gray-400 border border-gray-100 rounded-full px-2 py-0.5">sin auto</span>
                     )}
                   </div>
                 </div>
@@ -154,7 +140,7 @@ function OverviewView() {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <h3 className="text-sm font-bold text-gray-700 mb-4">Definicion de los Cuadrantes</h3>
+        <h3 className="text-sm font-bold text-gray-700 mb-4">Definición de Cuadrantes</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {BOX_CONFIGS.map((cfg) => (
             <div
@@ -182,8 +168,18 @@ function OverviewView() {
   );
 }
 
+const VIEW_TITLES: Record<AdminView, { title: string; sub: string }> = {
+  overview: { title: 'Resumen Ejecutivo', sub: `Panorama general — ${EMPLOYEES.length} colaboradores registrados` },
+  empleados: { title: 'Colaboradores', sub: 'Fichas individuales con resultados, enlaces y asignación de evaluadores' },
+  matriz: { title: 'Matriz 9-Box', sub: 'Visualiza la posición de los colaboradores según evaluaciones recibidas' },
+  resultados: { title: 'Resultados de percepción', sub: 'Resumen de todas las percepciones externas y autoevaluaciones' },
+  eval360: { title: 'Evaluación 360', sub: 'Plantilla de cuestionario, enlaces y resultados 360' },
+};
+
 function MainApp() {
-  const [activeTab, setActiveTab] = useState<ViewType>('overview');
+  const [activeView, setActiveView] = useState<AdminView>('overview');
+
+  const { title, sub } = VIEW_TITLES[activeView];
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
@@ -196,19 +192,19 @@ function MainApp() {
               </div>
               <div>
                 <h1 className="text-sm font-bold text-gray-900">Matriz 9-Box</h1>
-                <p className="text-xs text-gray-400 hidden sm:block">Valores y resultados (matriz 9-Box)</p>
+                <p className="text-xs text-gray-400 hidden sm:block">Panel RRHH</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 overflow-x-auto max-w-[55vw] sm:max-w-none">
-              {TABS.map((tab) => (
+            <nav className="flex items-center gap-0.5 bg-gray-100 rounded-xl p-1 overflow-x-auto max-w-[60vw] sm:max-w-none">
+              {ADMIN_TABS.map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => setActiveView(tab.id)}
                   className={`
                     flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap
-                    ${activeTab === tab.id
+                    ${activeView === tab.id
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-500 hover:text-gray-700'
                     }
@@ -218,10 +214,10 @@ function MainApp() {
                   <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               ))}
-            </div>
+            </nav>
 
             <div className="flex items-center gap-2 shrink-0">
-              <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center">
+              <div className="w-7 h-7 bg-gradient-to-br from-slate-600 to-slate-800 rounded-full flex items-center justify-center">
                 <span className="text-white text-xs font-bold">RH</span>
               </div>
               <div className="hidden sm:block text-right">
@@ -235,23 +231,15 @@ function MainApp() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         <div className="mb-5">
-          <h2 className="text-lg font-bold text-gray-900">
-            {activeTab === 'overview' && 'Resumen Ejecutivo'}
-            {activeTab === 'individual' && 'Evaluacion Individual'}
-            {activeTab === 'eval360' && 'Evaluación 360 y percepción'}
-          </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {activeTab === 'overview' && `Panorama general — ${EMPLOYEES.length} colaboradores registrados`}
-            {activeTab === 'individual' &&
-              'Visualiza la matriz según las evaluaciones recibidas. Solo aparecen colaboradores con al menos una evaluación.'}
-            {activeTab === 'eval360' &&
-              'Plantilla reutilizable, enlaces para evaluación 360, percepción y autoevaluación en la matriz 9-Box.'}
-          </p>
+          <h2 className="text-lg font-bold text-gray-900">{title}</h2>
+          <p className="text-sm text-gray-500 mt-0.5">{sub}</p>
         </div>
 
-        {activeTab === 'overview' && <OverviewView />}
-        {activeTab === 'individual' && <IndividualView employees={EMPLOYEES} />}
-        {activeTab === 'eval360' && <Evaluation360View />}
+        {activeView === 'overview' && <OverviewView />}
+        {activeView === 'empleados' && <EmployeeAdminPanel view="empleados" />}
+        {activeView === 'matriz' && <IndividualView employees={EMPLOYEES} />}
+        {activeView === 'resultados' && <EmployeeAdminPanel view="resultados" />}
+        {activeView === 'eval360' && <Evaluation360View />}
       </main>
     </div>
   );
