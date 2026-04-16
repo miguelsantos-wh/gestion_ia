@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BarChart3, Eye, Clock, Search, ChevronRight, Users, UserPlus,
   CheckCircle2, X, AlertCircle, UserCheck, Briefcase, Equal, Globe, User,
@@ -820,8 +820,13 @@ function Eval360AdminView() {
 }
 
 function Eval360EmployeeView({ employeeId }: { employeeId: string }) {
-  const { threeSixty, eval360Assignments } = useEvaluationStore();
+  const { threeSixty, eval360Assignments, syncCompletedEvaluations } = useEvaluationStore();
   const employee = EMPLOYEES.find(e => e.id === employeeId);
+
+  useEffect(() => {
+    syncCompletedEvaluations();
+  }, [syncCompletedEvaluations]);
+
   if (!employee) return null;
 
   const [activeTab, setActiveTab] = useState<'resumen' | 'resultados' | 'seguimiento'>('resumen');
