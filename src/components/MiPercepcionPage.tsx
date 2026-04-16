@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { EMPLOYEES } from '../data/mockData';
 import { BOX_CONFIGS } from '../data/mockData';
 import { useEvaluationStore } from '../context/EvaluationContext';
@@ -282,9 +282,13 @@ interface MiPercepcionPageProps {
 export default function MiPercepcionPage({ routeHash }: MiPercepcionPageProps) {
   const fullHash = effectiveLocationHash(routeHash);
   const employeeId = useMemo(() => parseEmployeeIdFromHash(fullHash), [fullHash]);
-  const { percepcion, autoPercepcion, assignments } = useEvaluationStore();
+  const { percepcion, autoPercepcion, assignments, syncCompletedEvaluations } = useEvaluationStore();
   const employee = EMPLOYEES.find((e) => e.id === employeeId);
   const [activeTab, setActiveTab] = useState<'percepcion' | 'auto' | 'brecha'>('percepcion');
+
+  useEffect(() => {
+    syncCompletedEvaluations();
+  }, [syncCompletedEvaluations]);
 
   const pendingAssignments = useMemo(() => {
     if (!employeeId) return [];

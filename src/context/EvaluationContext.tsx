@@ -10,6 +10,7 @@ import {
 import type { PerformanceLevel, PotentialLevel } from '../types';
 import type { Employee360Data, Eval360Assignment, EvaluationStorage, PeerSubmission, PerceptionPlacement, PercepcionAssignment } from '../types/evaluation';
 import { STORAGE_KEY } from '../types/evaluation';
+import { EMPLOYEES } from '../data/mockData';
 
 function loadStorage(): EvaluationStorage {
   try {
@@ -71,7 +72,7 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const triggerSync = useCallback((store: EvaluationStorage) => {
-    const next: EvaluationStorage = {
+    const synced360: EvaluationStorage = {
       ...store,
       eval360Assignments: (store.eval360Assignments ?? []).map((assignment) => {
         if (assignment.completedAt) return assignment;
@@ -105,6 +106,32 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
         return assignment;
       }),
     };
+
+    const syncedAssignments = (synced360.assignments ?? []).map((assignment) => {
+      if (assignment.completedAt) return assignment;
+
+      const evaluatorEmployee = EMPLOYEES.find((e) => e.id === assignment.evaluatorId);
+      if (!evaluatorEmployee) return assignment;
+
+      const evaluatorNameNorm = evaluatorEmployee.name.trim().toLowerCase();
+      const placements = synced360.percepcion[assignment.targetId] ?? [];
+
+      const match = placements.find(
+        (p) => p.evaluatorName && p.evaluatorName.trim().toLowerCase() === evaluatorNameNorm
+      );
+
+      if (match) {
+        return { ...assignment, completedAt: match.at };
+      }
+
+      return assignment;
+    });
+
+    const next: EvaluationStorage = {
+      ...synced360,
+      assignments: syncedAssignments,
+    };
+
     return next;
   }, []);
 
@@ -166,18 +193,19 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
       };
       setStore((prev) => {
         const list = prev.percepcion[employeeId] ?? [];
-        const next: EvaluationStorage = {
+        let next: EvaluationStorage = {
           ...prev,
           percepcion: {
             ...prev.percepcion,
             [employeeId]: [...list, row],
           },
         };
+        next = triggerSync(next);
         persist(next);
         return next;
       });
     },
-    [persist]
+    [persist, triggerSync]
   );
 
   const saveAutoPercepcion = useCallback(
