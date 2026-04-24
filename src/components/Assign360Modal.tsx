@@ -189,6 +189,9 @@ export default function Assign360Modal({ targetEmployee, onClose }: Assign360Mod
         employeeId: targetEmployee.id,
         mode: ev.role === 'self' ? 'self' : 'peer',
         assignmentId: id,
+        role: ev.role,
+        ...(sessionName ? { sessionName } : {}),
+        ...(sessionDescription ? { sessionDescription } : {}),
       });
       links[id] = link;
     }

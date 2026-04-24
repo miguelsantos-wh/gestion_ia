@@ -10,6 +10,8 @@ export interface ScaleOption {
 export interface CompetencyItem {
   id: string;
   order: number;
+  valueName: string;
+  valueDescription: string;
   statement: string;
   options: ScaleOption[];
 }
@@ -103,6 +105,18 @@ export interface Eval360Assignment {
   scores?: number[];
 }
 
+export type PdiStatus = 'pendiente' | 'en_progreso' | 'completado';
+
+export interface PdiItem {
+  id: string;
+  area: string;
+  action: string;
+  responsible: string;
+  deadline: string;
+  progress: number;
+  status: PdiStatus;
+}
+
 export interface EvaluationStorage {
   threeSixty: Record<string, Employee360Data>;
   percepcion: Record<string, PerceptionPlacement[]>;
@@ -110,4 +124,6 @@ export interface EvaluationStorage {
   assignments: PercepcionAssignment[];
   eval360Assignments: Eval360Assignment[];
   eval360Sessions: Evaluation360Session[];
+  /** PDI items keyed by sessionId */
+  pdiItems: Record<string, PdiItem[]>;
 }

@@ -18,6 +18,8 @@ export const EVALUATION_360_TEMPLATES: EvaluationTemplate[] = [
       {
         id: 'c1',
         order: 1,
+        valueName: 'Liderazgo',
+        valueDescription: 'Capacidad de inspirar, guiar y motivar a los demás hacia metas comunes con entusiasmo y autenticidad.',
         statement: 'Logra contagiar entusiasmo y motivar a los demás para dar lo mejor de sí.',
         options: [
           opt(1, 'Considero que casi nunca motiva ni impulsa al equipo.'),
@@ -30,6 +32,8 @@ export const EVALUATION_360_TEMPLATES: EvaluationTemplate[] = [
       {
         id: 'c2',
         order: 2,
+        valueName: 'Trabajo en equipo',
+        valueDescription: 'Habilidad para colaborar, apoyar y contribuir activamente con compañeros para lograr objetivos compartidos.',
         statement: 'Colabora y participa activamente con los demás para alcanzar metas comunes.',
         options: [
           opt(1, 'Considero que no suele trabajar en equipo.'),
@@ -42,6 +46,8 @@ export const EVALUATION_360_TEMPLATES: EvaluationTemplate[] = [
       {
         id: 'c3',
         order: 3,
+        valueName: 'Resolución de problemas',
+        valueDescription: 'Capacidad para identificar retos, proponer soluciones creativas y ejecutarlas con efectividad.',
         statement: 'Propone ideas creativas para resolver los retos que surgen.',
         options: [
           opt(1, 'Considero que evita proponer soluciones y prefiere señalar excusas.'),
@@ -54,6 +60,8 @@ export const EVALUATION_360_TEMPLATES: EvaluationTemplate[] = [
       {
         id: 'c4',
         order: 4,
+        valueName: 'Aprendizaje continuo',
+        valueDescription: 'Disposición y velocidad para asimilar nuevos conocimientos, herramientas y formas de trabajar.',
         statement: 'Aprende rápido nuevas herramientas, procesos o formas de trabajar.',
         options: [
           opt(1, 'Considero que le cuesta aprender cosas nuevas.'),
@@ -66,6 +74,8 @@ export const EVALUATION_360_TEMPLATES: EvaluationTemplate[] = [
       {
         id: 'c5',
         order: 5,
+        valueName: 'Hazlo Ahora',
+        valueDescription: 'Orientación a la acción: cumple compromisos con urgencia, consistencia y alto nivel de calidad.',
         statement: 'Cumple objetivos en tiempo y forma.',
         options: [
           opt(1, 'Casi nunca cumple con lo que se le pide.'),
@@ -78,6 +88,8 @@ export const EVALUATION_360_TEMPLATES: EvaluationTemplate[] = [
       {
         id: 'c6',
         order: 6,
+        valueName: 'Mejora continua',
+        valueDescription: 'Búsqueda constante de oportunidades para hacer mejor las cosas, proactivamente y sin esperar que se lo pidan.',
         statement: 'Búsqueda de mejorar y proactividad.',
         options: [
           opt(1, 'No mejora nada: entrega las cosas igual o peor de como estaban.'),
@@ -93,6 +105,8 @@ export const EVALUATION_360_TEMPLATES: EvaluationTemplate[] = [
       {
         id: 'c7',
         order: 7,
+        valueName: 'Autoaprendizaje',
+        valueDescription: 'Iniciativa personal para buscar, consumir y aplicar nuevos conocimientos de forma autónoma.',
         statement: 'Busca información y recursos para mejorar.',
         options: [
           opt(1, 'No busca aprender por sí mismo.'),
@@ -105,6 +119,8 @@ export const EVALUATION_360_TEMPLATES: EvaluationTemplate[] = [
       {
         id: 'c8',
         order: 8,
+        valueName: 'Alertidad',
+        valueDescription: 'Agilidad para detectar y responder situaciones con rapidez y efectividad, anticipándose cuando es posible.',
         statement: 'Responde rápidamente a situaciones.',
         options: [
           opt(1, 'No responde rápido.'),
@@ -117,6 +133,8 @@ export const EVALUATION_360_TEMPLATES: EvaluationTemplate[] = [
       {
         id: 'c9',
         order: 9,
+        valueName: 'Amabilidad',
+        valueDescription: 'Trato respetuoso, cordial y empático hacia compañeros, clientes y cualquier persona con quien interactúa.',
         statement: 'Respeto y cortesía.',
         options: [
           opt(1, 'Con frecuencia es descortés o irrespetuoso.'),
@@ -129,6 +147,8 @@ export const EVALUATION_360_TEMPLATES: EvaluationTemplate[] = [
       {
         id: 'c10',
         order: 10,
+        valueName: 'Valor agregado',
+        valueDescription: 'Capacidad de superar expectativas y generar impacto positivo más allá de lo requerido en su rol.',
         statement: 'Supera expectativas del cliente.',
         options: [
           opt(1, 'No cumple con lo esperado.'),
@@ -141,6 +161,8 @@ export const EVALUATION_360_TEMPLATES: EvaluationTemplate[] = [
       {
         id: 'c11',
         order: 11,
+        valueName: 'Asertividad',
+        valueDescription: 'Habilidad para expresar ideas, opiniones y límites con claridad, respeto y confianza en cualquier contexto.',
         statement: 'Expresa ideas con respeto y claridad.',
         options: [
           opt(1, 'No expresa ideas claramente.'),

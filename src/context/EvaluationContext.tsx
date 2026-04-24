@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { PerformanceLevel, PotentialLevel } from '../types';
-import type { Employee360Data, Eval360Assignment, Evaluation360Session, EvaluationStorage, PeerSubmission, PerceptionPlacement, PercepcionAssignment } from '../types/evaluation';
+import type { Employee360Data, Eval360Assignment, Evaluation360Session, EvaluationStorage, PeerSubmission, PerceptionPlacement, PercepcionAssignment, PdiItem } from '../types/evaluation';
 import { STORAGE_KEY } from '../types/evaluation';
 import { EMPLOYEES } from '../data/mockData';
 import { DEFAULT_360_TEMPLATE_ID } from '../data/evaluation360Template';
@@ -67,7 +67,7 @@ function migrateLegacyAssignments(
 function loadStorage(): EvaluationStorage {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [] };
+    if (!raw) return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [], pdiItems: {} };
     const p = JSON.parse(raw) as EvaluationStorage;
 
     const rawAssignments = (p.eval360Assignments ?? []).map(a => ({ ...a, sessionId: a.sessionId ?? 'legacy' }));
@@ -81,6 +81,7 @@ function loadStorage(): EvaluationStorage {
       assignments: p.assignments ?? [],
       eval360Assignments: migratedAssignments,
       eval360Sessions: migratedSessions,
+      pdiItems: p.pdiItems ?? {},
     };
 
     // Persist the migration immediately so it's not re-run on every load
@@ -90,7 +91,7 @@ function loadStorage(): EvaluationStorage {
 
     return storage;
   } catch {
-    return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [] };
+    return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [], pdiItems: {} };
   }
 }
 
@@ -101,6 +102,8 @@ interface EvaluationContextValue {
   assignments: PercepcionAssignment[];
   eval360Assignments: Eval360Assignment[];
   eval360Sessions: Evaluation360Session[];
+  pdiItems: Record<string, PdiItem[]>;
+  savePdiItems: (sessionId: string, items: PdiItem[]) => void;
   saveSelfEvaluation: (employeeId: string, scores: number[]) => void;
   savePeerEvaluation: (employeeId: string, evaluatorName: string, scores: number[]) => void;
   savePerceptionPlacement: (
@@ -451,8 +454,22 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
     });
   }, [persist, triggerSync]);
 
+  const savePdiItems = useCallback(
+    (sessionId: string, items: PdiItem[]) => {
+      setStore((prev) => {
+        const next: EvaluationStorage = {
+          ...prev,
+          pdiItems: { ...(prev.pdiItems ?? {}), [sessionId]: items },
+        };
+        persist(next);
+        return next;
+      });
+    },
+    [persist]
+  );
+
   const resetAll = useCallback(() => {
-    const empty: EvaluationStorage = { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [] };
+    const empty: EvaluationStorage = { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [], pdiItems: {} };
     persist(empty);
     setStore(empty);
   }, [persist]);
@@ -465,6 +482,8 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
       assignments: store.assignments,
       eval360Assignments: store.eval360Assignments ?? [],
       eval360Sessions: store.eval360Sessions ?? [],
+      pdiItems: store.pdiItems ?? {},
+      savePdiItems,
       saveSelfEvaluation,
       savePeerEvaluation,
       savePerceptionPlacement,
@@ -487,6 +506,8 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
       store.assignments,
       store.eval360Assignments,
       store.eval360Sessions,
+      store.pdiItems,
+      savePdiItems,
       saveSelfEvaluation,
       savePeerEvaluation,
       savePerceptionPlacement,

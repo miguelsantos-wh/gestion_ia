@@ -87,11 +87,15 @@ export default function Eval360SessionStatusView({ session, onBack }: Props) {
   }, [threeSixty, session.targetEmployeeId]);
 
   const handleCopy = (assignmentId: string, empId: string, role: Eval360Role) => {
-    const link = buildHashLink('/eval-360', {
+    const params: Record<string, string> = {
       employeeId: empId,
       mode: role === 'self' ? 'self' : 'peer',
       assignmentId,
-    });
+      role,
+    };
+    if (session.name) params.sessionName = session.name;
+    if (session.description) params.sessionDescription = session.description;
+    const link = buildHashLink('/eval-360', params);
     void navigator.clipboard.writeText(link);
     setCopiedId(assignmentId);
     setTimeout(() => setCopiedId(null), 2000);

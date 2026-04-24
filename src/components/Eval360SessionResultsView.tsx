@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft, Award, AlertCircle, TrendingUp, Plus, Trash2, BarChart2,
-  User, Briefcase, Equal, UserCheck, Globe, Users, CalendarDays,
-  CheckCircle2, Clock, ChevronDown, ChevronUp
+  User, Briefcase, Equal, UserCheck, Globe, Users,
+  CheckCircle2, Clock, ChevronDown, ChevronUp, Save
 } from 'lucide-react';
 import { useEvaluationStore } from '../context/EvaluationContext';
 import { EVALUATION_360_TEMPLATES } from '../data/evaluation360Template';
-import type { Eval360Role, Evaluation360Session } from '../types/evaluation';
+import type { Eval360Role, Evaluation360Session, PdiItem } from '../types/evaluation';
 import { EVAL_360_ROLE_LABELS } from '../types/evaluation';
 import { EMPLOYEES } from '../data/mockData';
 
@@ -34,17 +34,6 @@ const COMPETENCY_NAMES = [
   'Autoaprendizaje', 'Alertidad', 'Amabilidad', 'Valor agregado', 'Asertividad',
 ];
 
-type PdiStatus = 'pendiente' | 'en_progreso' | 'completado';
-
-interface PdiItem {
-  area: string;
-  action: string;
-  responsible: string;
-  deadline: string;
-  progress: number;
-  status: PdiStatus;
-}
-
 function getClassification(s: number) {
   if (s >= 4.1) return { label: 'Sobresaliente', badge: 'bg-green-100 text-green-700', bar: '#059669', border: 'border-green-200', bg: 'bg-green-50', text: 'text-green-600' };
   if (s >= 3.1) return { label: 'Bueno', badge: 'bg-blue-100 text-blue-700', bar: '#2563eb', border: 'border-blue-200', bg: 'bg-blue-50', text: 'text-blue-600' };
@@ -62,9 +51,20 @@ interface Props {
 }
 
 export default function Eval360SessionResultsView({ session, onBack }: Props) {
-  const { threeSixty, eval360Assignments } = useEvaluationStore();
-  const [pdiItems, setPdiItems] = useState<PdiItem[]>([]);
+  const { threeSixty, eval360Assignments, pdiItems: allPdi, savePdiItems } = useEvaluationStore();
+  const [pdiItems, setPdiItems] = useState<PdiItem[]>(() => allPdi[session.id] ?? []);
+  const [pdiDirty, setPdiDirty] = useState(false);
   const [expandedSource, setExpandedSource] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPdiItems(allPdi[session.id] ?? []);
+    setPdiDirty(false);
+  }, [session.id, allPdi]);
+
+  const handleSavePdi = useCallback(() => {
+    savePdiItems(session.id, pdiItems);
+    setPdiDirty(false);
+  }, [savePdiItems, session.id, pdiItems]);
 
   const employee = EMPLOYEES.find(e => e.id === session.targetEmployeeId);
   const assignments = eval360Assignments.filter(a => a.sessionId === session.id);
@@ -114,11 +114,18 @@ export default function Eval360SessionResultsView({ session, onBack }: Props) {
     return [...competencyScores].filter(c => c.avg > 0).sort((a, b) => a.avg - b.avg).slice(0, 3);
   }, [competencyScores]);
 
-  const addPdi = () => setPdiItems(p => [...p, { area: '', action: '', responsible: employee?.name ?? '', deadline: '', progress: 0, status: 'pendiente' }]);
+  const addPdi = () => {
+    setPdiItems(p => [...p, { id: `pdi-${Date.now()}`, area: '', action: '', responsible: employee?.name ?? '', deadline: '', progress: 0, status: 'pendiente' }]);
+    setPdiDirty(true);
+  };
   const updatePdi = (idx: number, field: keyof PdiItem, value: string | number) => {
     setPdiItems(p => p.map((item, i) => i === idx ? { ...item, [field]: value } : item));
+    setPdiDirty(true);
   };
-  const removePdi = (idx: number) => setPdiItems(p => p.filter((_, i) => i !== idx));
+  const removePdi = (idx: number) => {
+    setPdiItems(p => p.filter((_, i) => i !== idx));
+    setPdiDirty(true);
+  };
 
   if (!employee) return null;
 
@@ -407,15 +414,28 @@ export default function Eval360SessionResultsView({ session, onBack }: Props) {
           <div className="flex items-center gap-2">
             <TrendingUp size={16} className="text-blue-600" />
             <h4 className="text-sm font-bold text-gray-900">Compromisos y Plan de Acción (PDI)</h4>
+            {pdiDirty && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Sin guardar</span>}
           </div>
-          <button
-            type="button"
-            onClick={addPdi}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold hover:bg-slate-700 transition-colors"
-          >
-            <Plus size={13} />
-            Agregar
-          </button>
+          <div className="flex items-center gap-2">
+            {pdiDirty && (
+              <button
+                type="button"
+                onClick={handleSavePdi}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors"
+              >
+                <Save size={13} />
+                Guardar
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={addPdi}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold hover:bg-slate-700 transition-colors"
+            >
+              <Plus size={13} />
+              Agregar
+            </button>
+          </div>
         </div>
 
         {pdiItems.length === 0 ? (
