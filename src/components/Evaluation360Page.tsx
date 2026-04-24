@@ -334,10 +334,9 @@ function ResumenTab({ employee }: { employee: Employee }) {
 
 type DetailTab = 'resumen' | 'asignar' | 'seguimiento' | 'resultados';
 
-function EmployeeDetailPanel({ employee, onClose }: { employee: Employee; onClose: () => void }) {
+function EmployeeDetailPanel({ employee, onClose, onAssign }: { employee: Employee; onClose: () => void; onAssign?: () => void }) {
   const { eval360Assignments, threeSixty } = useEvaluationStore();
   const [activeTab, setActiveTab] = useState<DetailTab>('resumen');
-  const [showAssignModal, setShowAssignModal] = useState(false);
 
   const assignments = eval360Assignments.filter(a => a.targetEmployeeId === employee.id);
   const completed = assignments.filter(a => a.completedAt).length;
@@ -401,6 +400,7 @@ function EmployeeDetailPanel({ employee, onClose }: { employee: Employee; onClos
           </>
         )}
 
+
         {activeTab === 'asignar' && (
           <div className="space-y-3">
             <p className="text-xs text-gray-600 leading-relaxed">
@@ -437,7 +437,7 @@ function EmployeeDetailPanel({ employee, onClose }: { employee: Employee; onClos
             </div>
             <button
               type="button"
-              onClick={() => setShowAssignModal(true)}
+              onClick={onAssign}
               className="w-full py-3 rounded-xl bg-slate-800 text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-slate-700 transition-colors"
             >
               <UserPlus size={16} />
@@ -455,12 +455,6 @@ function EmployeeDetailPanel({ employee, onClose }: { employee: Employee; onClos
         )}
       </div>
 
-      {showAssignModal && (
-        <Assign360Modal
-          targetEmployee={employee}
-          onClose={() => setShowAssignModal(false)}
-        />
-      )}
     </div>
   );
 }
@@ -680,25 +674,33 @@ function GlobalResults360() {
   );
 }
 
+const TEAMS = ['Adminolt', 'CRMInbox', 'Wisphub'];
+const QUARTERS = ['Q1 2025', 'Q2 2025', 'Q3 2025', 'Q4 2024', 'Q3 2024'];
+
 function Eval360AdminView() {
   const { eval360Assignments, threeSixty } = useEvaluationStore();
   const [search, setSearch] = useState('');
-  const [filterDept, setFilterDept] = useState('all');
+  const [filterArea, setFilterArea] = useState('all');
+  const [filterTeam, setFilterTeam] = useState('all');
+  const [filterPeriod, setFilterPeriod] = useState('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [mainTab, setMainTab] = useState<'colaboradores' | 'resultados'>('colaboradores');
+  const [showAssignModalFor, setShowAssignModalFor] = useState<Employee | null>(null);
 
-  const departments = Array.from(new Set(EMPLOYEES.map(e => e.department)));
+  const areas = useMemo(() => Array.from(new Set(EMPLOYEES.map(e => e.department))), []);
 
   const filtered = useMemo(() =>
     EMPLOYEES.filter(e => {
-      const matchSearch = e.name.toLowerCase().includes(search.toLowerCase()) || e.position.toLowerCase().includes(search.toLowerCase());
-      const matchDept = filterDept === 'all' || e.department === filterDept;
-      return matchSearch && matchDept;
+      const matchSearch = search === '' ||
+        e.name.toLowerCase().includes(search.toLowerCase()) ||
+        e.position.toLowerCase().includes(search.toLowerCase());
+      const matchArea = filterArea === 'all' || e.department === filterArea;
+      return matchSearch && matchArea;
     }),
-    [search, filterDept]
+    [search, filterArea]
   );
 
   const selectedEmployee = selectedId ? EMPLOYEES.find(e => e.id === selectedId) ?? null : null;
+
   const totalCompleted = EMPLOYEES.filter(e => {
     const a = eval360Assignments.filter(x => x.targetEmployeeId === e.id);
     return a.length > 0 && a.every(x => x.completedAt);
@@ -712,6 +714,7 @@ function Eval360AdminView() {
 
   return (
     <div className="space-y-5">
+      {/* KPI cards */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-4 flex items-start gap-3">
           <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
@@ -751,83 +754,190 @@ function Eval360AdminView() {
         </div>
       </div>
 
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
-        <button
-          type="button"
-          onClick={() => setMainTab('colaboradores')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mainTab === 'colaboradores' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-        >
-          <Users size={15} />
-          Colaboradores
-        </button>
-        <button
-          type="button"
-          onClick={() => setMainTab('resultados')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mainTab === 'resultados' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-        >
-          <BarChart2 size={15} />
-          Resultados globales
-        </button>
+      {/* Filters + search */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <div className="flex flex-wrap gap-3 items-center">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Buscar colaborador..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 transition-all"
+            />
+          </div>
+
+          {/* Área filter */}
+          <div className="relative">
+            <select
+              value={filterArea}
+              onChange={e => setFilterArea(e.target.value)}
+              className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 text-gray-700 cursor-pointer transition-all"
+            >
+              <option value="all">Todas las áreas</option>
+              {areas.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+            <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
+
+          {/* Equipo filter */}
+          <div className="relative">
+            <select
+              value={filterTeam}
+              onChange={e => setFilterTeam(e.target.value)}
+              className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 text-gray-700 cursor-pointer transition-all"
+            >
+              <option value="all">Todos los equipos</option>
+              {TEAMS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
+
+          {/* Periodo filter */}
+          <div className="relative">
+            <select
+              value={filterPeriod}
+              onChange={e => setFilterPeriod(e.target.value)}
+              className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 text-gray-700 cursor-pointer transition-all"
+            >
+              <option value="all">Todos los periodos</option>
+              {QUARTERS.map(q => <option key={q} value={q}>{q}</option>)}
+            </select>
+            <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
+
+          <span className="text-xs text-gray-400 ml-auto">{filtered.length} colaborador{filtered.length !== 1 ? 'es' : ''}</span>
+        </div>
       </div>
 
-      {mainTab === 'colaboradores' && (
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-5">
-          <div className="xl:col-span-2 space-y-3">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar colaborador..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                />
-              </div>
-              <select
-                value={filterDept}
-                onChange={e => setFilterDept(e.target.value)}
-                className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
-              >
-                <option value="all">Todos</option>
-                {departments.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </div>
-            <div className="space-y-2 max-h-[calc(100vh-360px)] overflow-y-auto pr-0.5">
+      {/* Table */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/80">
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Colaborador</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Área</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Progreso</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Puntaje</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Clasificación</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                <th className="px-4 py-3 w-12" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
               {filtered.length === 0 ? (
-                <div className="text-center py-10 text-gray-400 text-sm bg-white rounded-2xl border border-gray-100">Sin resultados</div>
+                <tr>
+                  <td colSpan={7} className="text-center py-12 text-sm text-gray-400">
+                    No se encontraron colaboradores con los filtros actuales.
+                  </td>
+                </tr>
               ) : (
-                filtered.map(emp => (
-                  <EmployeeCard360
-                    key={emp.id}
-                    employee={emp}
-                    onSelect={() => setSelectedId(selectedId === emp.id ? null : emp.id)}
-                    isSelected={selectedId === emp.id}
-                  />
-                ))
+                filtered.map(emp => {
+                  const assignments = eval360Assignments.filter(a => a.targetEmployeeId === emp.id);
+                  const completed = assignments.filter(a => a.completedAt).length;
+                  const total = assignments.length;
+                  const pct = total > 0 ? (completed / total) * 100 : 0;
+                  const overallScore = computeOverallScore(emp.id, threeSixty);
+                  const isSelected = selectedId === emp.id;
+                  const statusLabel = total === 0 ? 'Sin asignar' : pct === 100 ? 'Completo' : 'En progreso';
+                  const statusCls = total === 0
+                    ? 'bg-gray-100 text-gray-500'
+                    : pct === 100
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-blue-100 text-blue-700';
+
+                  return (
+                    <>
+                      <tr
+                        key={emp.id}
+                        className={`transition-colors cursor-pointer ${isSelected ? 'bg-slate-50' : 'hover:bg-gray-50/60'}`}
+                        onClick={() => setSelectedId(isSelected ? null : emp.id)}
+                      >
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-600 shrink-0">
+                              {emp.avatar}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 truncate">{emp.name}</p>
+                              <p className="text-[11px] text-gray-400 truncate">{emp.position}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span className="text-xs text-gray-600">{emp.department}</span>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-gray-100 rounded-full h-1.5">
+                              <div
+                                className="h-1.5 rounded-full transition-all"
+                                style={{ width: `${pct}%`, backgroundColor: pct === 100 ? '#059669' : '#2563eb' }}
+                              />
+                            </div>
+                            <span className="text-[11px] text-gray-500 shrink-0">{completed}/{total}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {overallScore !== null ? (
+                            <span className={`text-base font-black ${getScoreColor(overallScore)}`}>{overallScore.toFixed(2)}</span>
+                          ) : (
+                            <span className="text-sm text-gray-300">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {overallScore !== null ? (
+                            <span className={`text-[11px] font-bold px-2 py-1 rounded-full ${getScoreBg(overallScore)}`}>
+                              {getClassificationLabel(overallScore)}
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-gray-300">Sin datos</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${statusCls}`}>
+                            {statusLabel}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isSelected ? 'bg-slate-200 text-slate-600' : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500'}`}>
+                            {isSelected ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* Inline expanded panel */}
+                      {isSelected && selectedEmployee && (
+                        <tr key={`${emp.id}-panel`} className="bg-slate-50/60">
+                          <td colSpan={7} className="px-5 py-5">
+                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                              <EmployeeDetailPanel
+                                employee={selectedEmployee}
+                                onClose={() => setSelectedId(null)}
+                                onAssign={() => setShowAssignModalFor(selectedEmployee)}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  );
+                })
               )}
-            </div>
-          </div>
-
-          <div className="xl:col-span-3">
-            {selectedEmployee ? (
-              <EmployeeDetailPanel employee={selectedEmployee} onClose={() => setSelectedId(null)} />
-            ) : (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                  <Users size={26} className="text-gray-300" />
-                </div>
-                <h4 className="text-sm font-semibold text-gray-500">Selecciona un colaborador</h4>
-                <p className="text-xs text-gray-400 mt-1.5 max-w-xs leading-relaxed">
-                  Haz clic en una ficha para ver el resumen, asignar evaluadores 360, dar seguimiento y ver resultados individuales.
-                </p>
-              </div>
-            )}
-          </div>
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
 
-      {mainTab === 'resultados' && <GlobalResults360 />}
+      {showAssignModalFor && (
+        <Assign360Modal
+          targetEmployee={showAssignModalFor}
+          onClose={() => setShowAssignModalFor(null)}
+        />
+      )}
     </div>
   );
 }
