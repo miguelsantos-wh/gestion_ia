@@ -5,6 +5,7 @@ import EmpleadoAPage from './components/EmpleadoAPage';
 import Evaluation360Page from './components/Evaluation360Page';
 import AciertosDesaciertosPage from './components/AciertosDesaciertosPage';
 import FormShowcasePage from './components/FormShowcasePage';
+import EmployeeListPage from './components/EmployeeListPage';
 import PublicEval360Page from './components/PublicEval360Page';
 import PublicPercepcionPage from './components/PublicPercepcionPage';
 import PublicAutoPercepcionPage from './components/PublicAutoPercepcionPage';
@@ -24,32 +25,42 @@ const PAGE_TITLES: Record<SidebarView, { title: string; sub: string }> = {
   eval360: { title: 'Evaluación 360', sub: 'Asignación, seguimiento y análisis de evaluaciones 360' },
   aciertos: { title: 'Aciertos y Desaciertos', sub: 'Evaluación de fortalezas y áreas de mejora' },
   formulario: { title: 'Guía de Formularios', sub: 'Referencia visual de todos los elementos de formulario disponibles' },
+  empleados: { title: 'Empleados', sub: 'Directorio y perfiles del equipo' },
 };
 
 function MainApp() {
   const [activeView, setActiveView] = useState<SidebarView>('dashboard');
 
   const { title, sub } = PAGE_TITLES[activeView];
+  const isEmployees = activeView === 'empleados';
 
   return (
     <div className="flex min-h-screen bg-gray-50 font-sans">
       <Sidebar activeView={activeView} onViewChange={setActiveView} />
 
-      <div className="flex-1 lg:ml-64">
-        <header className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm">
-          <div className="px-6 py-5">
-            <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-            <p className="text-sm text-gray-600 mt-1">{sub}</p>
-          </div>
-        </header>
+      <div className="flex-1 lg:ml-64 flex flex-col">
+        {!isEmployees && (
+          <header className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm">
+            <div className="px-6 py-5">
+              <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+              <p className="text-sm text-gray-600 mt-1">{sub}</p>
+            </div>
+          </header>
+        )}
 
-        <main className="p-6 max-w-7xl mx-auto">
-          {activeView === 'dashboard' && <DashboardPage />}
-          {activeView === 'empleadoA' && <EmpleadoAPage />}
-          {activeView === 'eval360' && <Evaluation360Page />}
-          {activeView === 'aciertos' && <AciertosDesaciertosPage />}
-          {activeView === 'formulario' && <FormShowcasePage />}
-        </main>
+        {isEmployees ? (
+          <div className="flex-1">
+            <EmployeeListPage />
+          </div>
+        ) : (
+          <main className="p-6 max-w-7xl mx-auto w-full">
+            {activeView === 'dashboard' && <DashboardPage />}
+            {activeView === 'empleadoA' && <EmpleadoAPage />}
+            {activeView === 'eval360' && <Evaluation360Page />}
+            {activeView === 'aciertos' && <AciertosDesaciertosPage />}
+            {activeView === 'formulario' && <FormShowcasePage />}
+          </main>
+        )}
       </div>
     </div>
   );
