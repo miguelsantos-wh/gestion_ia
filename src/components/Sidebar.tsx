@@ -1,7 +1,7 @@
-import { BarChart3, UserCheck, ClipboardList, Target, ChevronRight, Menu, X } from 'lucide-react';
+import { BarChart3, UserCheck, ClipboardList, Target, ChevronRight, Menu, X, LayoutList } from 'lucide-react';
 import { useState } from 'react';
 
-export type SidebarView = 'dashboard' | 'empleadoA' | 'eval360' | 'aciertos';
+export type SidebarView = 'dashboard' | 'empleadoA' | 'eval360' | 'aciertos' | 'formulario';
 
 interface SidebarProps {
   activeView: SidebarView;
@@ -13,11 +13,13 @@ const MENU_ITEMS: { id: SidebarView; label: string; icon: React.ReactNode; secti
   { id: 'empleadoA', label: 'Empleado A', icon: <UserCheck size={18} />, section: 'evaluaciones' },
   { id: 'eval360', label: 'Evaluación 360', icon: <ClipboardList size={18} />, section: 'evaluaciones' },
   { id: 'aciertos', label: 'Aciertos y Desaciertos', icon: <Target size={18} />, section: 'evaluaciones' },
+  { id: 'formulario', label: 'Guía de Formularios', icon: <LayoutList size={18} />, section: 'utilidades' },
 ];
 
 const SECTIONS = {
   principal: 'Navegación Principal',
   evaluaciones: 'Evaluaciones',
+  utilidades: 'Utilidades',
 };
 
 export default function Sidebar({ activeView, onViewChange }: SidebarProps) {

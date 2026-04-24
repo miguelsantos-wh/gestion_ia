@@ -4,6 +4,7 @@ import DashboardPage from './components/DashboardPage';
 import EmpleadoAPage from './components/EmpleadoAPage';
 import Evaluation360Page from './components/Evaluation360Page';
 import AciertosDesaciertosPage from './components/AciertosDesaciertosPage';
+import FormShowcasePage from './components/FormShowcasePage';
 import PublicEval360Page from './components/PublicEval360Page';
 import PublicPercepcionPage from './components/PublicPercepcionPage';
 import PublicAutoPercepcionPage from './components/PublicAutoPercepcionPage';
@@ -22,6 +23,7 @@ const PAGE_TITLES: Record<SidebarView, { title: string; sub: string }> = {
   empleadoA: { title: 'Empleado A', sub: 'Resumen, colaboradores, matriz y resultados' },
   eval360: { title: 'Evaluación 360', sub: 'Asignación, seguimiento y análisis de evaluaciones 360' },
   aciertos: { title: 'Aciertos y Desaciertos', sub: 'Evaluación de fortalezas y áreas de mejora' },
+  formulario: { title: 'Guía de Formularios', sub: 'Referencia visual de todos los elementos de formulario disponibles' },
 };
 
 function MainApp() {
@@ -46,6 +48,7 @@ function MainApp() {
           {activeView === 'empleadoA' && <EmpleadoAPage />}
           {activeView === 'eval360' && <Evaluation360Page />}
           {activeView === 'aciertos' && <AciertosDesaciertosPage />}
+          {activeView === 'formulario' && <FormShowcasePage />}
         </main>
       </div>
     </div>
