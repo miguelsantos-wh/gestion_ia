@@ -95,14 +95,13 @@ function Example({ title, description, code, children }: { title: string; descri
 }
 
 /* ── Color swatch ── */
-function Swatch({ name, bg, text, hex }: { name: string; bg: string; text: string; hex: string }) {
+function Swatch({ name, bg, hex }: { name: string; bg: string; hex: string }) {
   return (
     <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-white">
       <div className={`w-10 h-10 rounded-xl ${bg} shrink-0`} />
       <div className="min-w-0">
         <p className="text-xs font-bold text-gray-800">{name}</p>
         <p className="text-[10px] text-gray-400 font-mono">{hex}</p>
-        <p className="text-[10px] text-gray-400 font-mono">{text}</p>
       </div>
     </div>
   );
@@ -140,7 +139,7 @@ export default function DesignSystemPage() {
             </div>
             <div>
               <p className="text-sm font-bold text-gray-900">Design System</p>
-              <p className="text-[10px] text-gray-400">v1.0 Documentacion</p>
+              <p className="text-[10px] text-gray-400">Bootstrap 5.1 Docs</p>
             </div>
           </div>
         </div>
@@ -173,7 +172,7 @@ export default function DesignSystemPage() {
         <header className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm">
           <div className="px-6 py-5">
             <h1 className="text-2xl font-bold text-gray-900">Design System</h1>
-            <p className="text-sm text-gray-600 mt-1">Documentacion visual de componentes y patrones de diseno del proyecto</p>
+            <p className="text-sm text-gray-600 mt-1">Documentacion visual de componentes usando <strong>Bootstrap 5.1</strong> — equivalente a los elementos del proyecto</p>
           </div>
         </header>
 
@@ -182,34 +181,48 @@ export default function DesignSystemPage() {
           {/* ═══════════════════ COLORES ═══════════════════ */}
           <Section id="colores" title="Colores">
             <p className="text-sm text-gray-600 leading-relaxed">
-              El sistema de colores esta construido sobre la paleta de Tailwind CSS con extensiones semanticas para evaluaciones, roles y estados.
+              El sistema de colores del proyecto se mapea a las clases de color de Bootstrap 5.1. Aqui se muestra la equivalencia entre los colores usados en la app y las clases de Bootstrap.
             </p>
 
             <div>
-              <h3 className="text-sm font-bold text-gray-700 mb-3">Paleta Primaria</h3>
+              <h3 className="text-sm font-bold text-gray-700 mb-3">Paleta Primaria — Equivalencia Bootstrap</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                <Swatch name="Blue 600" bg="bg-blue-600" text="text-blue-600" hex="#2563eb" />
-                <Swatch name="Teal 600" bg="bg-teal-600" text="text-teal-600" hex="#0d9488" />
-                <Swatch name="Green 600" bg="bg-green-600" text="text-green-600" hex="#16a34a" />
-                <Swatch name="Emerald 600" bg="bg-emerald-600" text="text-emerald-600" hex="#059669" />
-                <Swatch name="Amber 600" bg="bg-amber-600" text="text-amber-600" hex="#d97706" />
-                <Swatch name="Red 600" bg="bg-red-600" text="text-red-600" hex="#dc2626" />
-                <Swatch name="Slate 800" bg="bg-slate-800" text="text-slate-800" hex="#1e293b" />
-                <Swatch name="Gray 900" bg="bg-gray-900" text="text-gray-900" hex="#111827" />
+                <Swatch name="primary" bg="bg-blue-600" hex="#0d6efd" />
+                <Swatch name="success" bg="bg-green-600" hex="#198754" />
+                <Swatch name="info / teal" bg="bg-teal-600" hex="#0dcaf0" />
+                <Swatch name="warning" bg="bg-amber-600" hex="#ffc107" />
+                <Swatch name="danger" bg="bg-red-600" hex="#dc3545" />
+                <Swatch name="dark" bg="bg-slate-800" hex="#212529" />
+                <Swatch name="secondary" bg="bg-gray-600" hex="#6c757d" />
+                <Swatch name="light" bg="bg-gray-100" hex="#f8f9fa" />
               </div>
+              <CodeBlock>{`<!-- Colores principales de Bootstrap 5.1 -->
+<span class="text-primary">Azul primario</span>
+<span class="text-success">Verde exito</span>
+<span class="text-info">Teal informacion</span>
+<span class="text-warning">Amarillo advertencia</span>
+<span class="text-danger">Rojo peligro</span>
+<span class="text-dark">Oscuro</span>
+<span class="text-secondary">Secundario</span>
+<span class="text-muted">Gris suave</span>
+
+<!-- Fondos con opacidad -->
+<div class="bg-primary bg-opacity-10">Fondo azul 10%</div>
+<div class="bg-success bg-opacity-10">Fondo verde 10%</div>
+<div class="bg-warning bg-opacity-10">Fondo amarillo 10%</div>`}</CodeBlock>
             </div>
 
             <div>
-              <h3 className="text-sm font-bold text-gray-700 mb-3">Colores Semanticos - Evaluacion 360</h3>
-              <p className="text-xs text-gray-500 mb-3">Cada rol de evaluador tiene un color asignado consistente en toda la app.</p>
+              <h3 className="text-sm font-bold text-gray-700 mb-3">Colores Semanticos — Evaluacion 360</h3>
+              <p className="text-xs text-gray-500 mb-3">Cada rol de evaluador tiene un color asignado. Con Bootstrap se usan <code>bg-opacity</code> y clases custom.</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[
-                  { role: 'Autoevaluacion (self)', color: '#2563eb', bg: 'bg-blue-100', text: 'text-blue-700' },
-                  { role: 'Lider (leader)', color: '#0d9488', bg: 'bg-teal-100', text: 'text-teal-700' },
-                  { role: 'Par (peer)', color: '#7c3aed', bg: 'bg-purple-100', text: 'text-purple-700' },
-                  { role: 'Colaborador', color: '#d97706', bg: 'bg-amber-100', text: 'text-amber-700' },
-                  { role: 'Cliente', color: '#dc2626', bg: 'bg-red-100', text: 'text-red-700' },
-                  { role: 'Anonimo', color: '#64748b', bg: 'bg-slate-100', text: 'text-slate-700' },
+                  { role: 'Autoevaluacion (self)', color: '#2563eb' },
+                  { role: 'Lider (leader)', color: '#0d9488' },
+                  { role: 'Par (peer)', color: '#7c3aed' },
+                  { role: 'Colaborador', color: '#d97706' },
+                  { role: 'Cliente', color: '#dc2626' },
+                  { role: 'Anonimo', color: '#64748b' },
                 ].map(r => (
                   <div key={r.role} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-white">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${r.color}15` }}>
@@ -222,29 +235,27 @@ export default function DesignSystemPage() {
                   </div>
                 ))}
               </div>
-            </div>
+              <CodeBlock>{`<!-- Colores de rol con CSS custom properties (Bootstrap 5.1) -->
+<style>
+  .role-self    { --role-color: #2563eb; }
+  .role-leader  { --role-color: #0d9488; }
+  .role-peer    { --role-color: #7c3aed; }
+  .role-collab  { --role-color: #d97706; }
+  .role-client  { --role-color: #dc2626; }
+  .role-anon    { --role-color: #64748b; }
+  .role-badge {
+    background-color: rgba(var(--role-rgb), 0.1);
+    color: var(--role-color);
+  }
+</style>
 
-            <div>
-              <h3 className="text-sm font-bold text-gray-700 mb-3">Colores por Departamento</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {[
-                  { dept: 'Tecnologia', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-100' },
-                  { dept: 'Ventas', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-100' },
-                  { dept: 'Marketing', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-100' },
-                  { dept: 'Finanzas', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100' },
-                  { dept: 'Recursos Humanos', bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-100' },
-                  { dept: 'Operaciones', bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-200' },
-                ].map(d => (
-                  <div key={d.dept} className={`flex items-center gap-3 p-3 rounded-xl border ${d.border} ${d.bg}`}>
-                    <span className={`text-xs font-bold ${d.text}`}>{d.dept}</span>
-                  </div>
-                ))}
-              </div>
+<span class="role-badge role-self badge rounded-pill">
+  Autoevaluacion
+</span>`}</CodeBlock>
             </div>
 
             <div>
               <h3 className="text-sm font-bold text-gray-700 mb-3">Escala de Puntaje (0-5)</h3>
-              <p className="text-xs text-gray-500 mb-3">Los puntajes de evaluacion se mapean a 4 niveles con colores consistentes.</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
                   { range: '4.1 - 5.0', label: 'Sobresaliente', color: '#059669', bg: 'bg-green-100', text: 'text-green-700' },
@@ -261,102 +272,95 @@ export default function DesignSystemPage() {
                   </div>
                 ))}
               </div>
-              <CodeBlock>{`function getScoreColor(score: number) {
-  if (score >= 4.1) return 'text-green-600';
-  if (score >= 3.1) return 'text-blue-600';
-  if (score >= 2.1) return 'text-yellow-600';
-  return 'text-red-600';
-}
-
-function getScoreBg(score: number) {
-  if (score >= 4.1) return 'bg-green-100 text-green-700';
-  if (score >= 3.1) return 'bg-blue-100 text-blue-700';
-  if (score >= 2.1) return 'bg-yellow-100 text-yellow-700';
-  return 'bg-red-100 text-red-700';
-}
-
-function getScoreBar(score: number) {
-  if (score >= 4.1) return '#059669';
-  if (score >= 3.1) return '#2563eb';
-  if (score >= 2.1) return '#d97706';
-  return '#dc2626';
-}`}</CodeBlock>
+              <CodeBlock>{`<!-- Badges de clasificacion con Bootstrap 5.1 -->
+<span class="badge rounded-pill bg-success bg-opacity-10 text-success">
+  Sobresaliente (4.1-5.0)
+</span>
+<span class="badge rounded-pill bg-primary bg-opacity-10 text-primary">
+  Bueno (3.1-4.0)
+</span>
+<span class="badge rounded-pill bg-warning bg-opacity-10 text-warning">
+  Regular (2.1-3.0)
+</span>
+<span class="badge rounded-pill bg-danger bg-opacity-10 text-danger">
+  Deficiente (1.0-2.0)
+</span>`}</CodeBlock>
             </div>
           </Section>
 
           {/* ═══════════════════ TIPOGRAFIA ═══════════════════ */}
           <Section id="tipografia" title="Tipografia">
             <p className="text-sm text-gray-600 leading-relaxed">
-              El sistema tipografico usa la fuente sans-serif por defecto de Tailwind con 4 pesos principales y tamanos estandarizados.
+              Bootstrap 5.1 provee clases de tipografia que equivalen a los tamanos usados en el proyecto.
             </p>
 
             <div className="space-y-4">
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
-                <h3 className="text-sm font-bold text-gray-700 mb-2">Tamanos de Texto</h3>
+                <h3 className="text-sm font-bold text-gray-700 mb-2">Equivalencia de Tamanos</h3>
                 {[
-                  { cls: 'text-2xl font-bold', label: 'text-2xl font-bold', use: 'Titulos de pagina' },
-                  { cls: 'text-xl font-black', label: 'text-xl font-black', use: 'Valores KPI' },
-                  { cls: 'text-base font-bold', label: 'text-base font-bold', use: 'Subtitulos de seccion' },
-                  { cls: 'text-sm font-semibold', label: 'text-sm font-semibold', use: 'Labels, nombres, botones' },
-                  { cls: 'text-xs font-medium', label: 'text-xs font-medium', use: 'Texto secundario, metadatos' },
-                  { cls: 'text-[11px] font-bold', label: 'text-[11px] font-bold', use: 'Badges, micro-labels' },
-                  { cls: 'text-[10px] text-gray-400', label: 'text-[10px] text-gray-400', use: 'Micro-texto, hints' },
+                  { bs: 'h2 .fs-2 fw-bold', tw: 'text-2xl font-bold', use: 'Titulos de pagina' },
+                  { bs: '.fs-4 fw-bolder', tw: 'text-xl font-black', use: 'Valores KPI' },
+                  { bs: 'h5 .fs-5 fw-bold', tw: 'text-base font-bold', use: 'Subtitulos' },
+                  { bs: '.fs-6 fw-semibold', tw: 'text-sm font-semibold', use: 'Labels, botones' },
+                  { bs: 'small .fw-medium', tw: 'text-xs font-medium', use: 'Texto secundario' },
+                  { bs: 'small .fw-bold', tw: 'text-[11px] font-bold', use: 'Badges, micro-labels' },
+                  { bs: 'small.text-muted', tw: 'text-[10px] text-gray-400', use: 'Micro-texto, hints' },
                 ].map(t => (
-                  <div key={t.label} className="flex items-baseline gap-4 border-b border-gray-50 pb-3 last:border-0">
-                    <span className={t.cls + ' text-gray-900 w-48 shrink-0'}>{t.use}</span>
-                    <code className="text-[10px] text-gray-400 font-mono">{t.label}</code>
+                  <div key={t.bs} className="flex items-baseline gap-4 border-b border-gray-50 pb-3 last:border-0">
+                    <span className={`text-gray-900 w-48 shrink-0 ${t.tw}`}>{t.use}</span>
+                    <div className="text-[10px] space-y-0.5">
+                      <p className="text-gray-500">Bootstrap: <code className="text-blue-600">{t.bs}</code></p>
+                    </div>
                   </div>
                 ))}
               </div>
 
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
-                <h3 className="text-sm font-bold text-gray-700 mb-2">Pesos de Fuente</h3>
-                <div className="flex flex-wrap gap-4">
-                  {[
-                    { cls: 'font-medium', label: 'medium (500)' },
-                    { cls: 'font-semibold', label: 'semibold (600)' },
-                    { cls: 'font-bold', label: 'bold (700)' },
-                    { cls: 'font-black', label: 'black (900)' },
-                  ].map(w => (
-                    <div key={w.label} className={`text-sm ${w.cls} text-gray-800`}>
-                      {w.label} <code className="text-[10px] text-gray-400 font-mono ml-1">.{w.cls.replace('font-', '')}</code>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <CodeBlock>{`<!-- Tipografia Bootstrap 5.1 -->
 
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <h3 className="text-sm font-bold text-gray-700 mb-2">Colores de Texto</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { cls: 'text-gray-900', label: 'Primario' },
-                    { cls: 'text-gray-600', label: 'Secundario' },
-                    { cls: 'text-gray-500', label: 'Terciario' },
-                    { cls: 'text-gray-400', label: 'Placeholder' },
-                    { cls: 'text-gray-300', label: 'Deshabilitado' },
-                    { cls: 'text-blue-600', label: 'Enlace/Activo' },
-                    { cls: 'text-green-600', label: 'Exito' },
-                    { cls: 'text-red-600', label: 'Error' },
-                  ].map(c => (
-                    <p key={c.label} className={`text-sm font-semibold ${c.cls}`}>{c.label}</p>
-                  ))}
-                </div>
-              </div>
+<!-- Titulo de pagina (equiv: text-2xl font-bold) -->
+<h2 class="fs-2 fw-bold">Dashboard</h2>
+
+<!-- Valor KPI (equiv: text-xl font-black) -->
+<p class="fs-4 fw-bolder">12</p>
+
+<!-- Subtitulo (equiv: text-base font-bold) -->
+<h5 class="fs-5 fw-bold">Seccion</h5>
+
+<!-- Label / Boton (equiv: text-sm font-semibold) -->
+<span class="fs-6 fw-semibold">Nombre</span>
+
+<!-- Texto secundario (equiv: text-xs font-medium) -->
+<small class="fw-medium text-muted">Departamento</small>
+
+<!-- Micro-texto (equiv: text-[10px] text-gray-400) -->
+<small class="text-muted" style="font-size: 0.625rem">Hint</small>`}</CodeBlock>
             </div>
           </Section>
 
           {/* ═══════════════════ BOTONES ═══════════════════ */}
           <Section id="botones" title="Botones">
             <p className="text-sm text-gray-600 leading-relaxed">
-              Los botones siguen una jerarquia visual clara: primario (oscuro), secundario (borde), icono y deshabilitado.
+              Los botones del proyecto se replican con las clases de boton de Bootstrap 5.1, usando variantes de color, tamanos y estados.
             </p>
 
             <Example
               title="Boton Primario"
-              description="Accion principal. Fondo slate-800 con texto blanco."
-              code={`<button className="px-4 py-2.5 rounded-xl bg-slate-800 text-white text-sm font-semibold
-  hover:bg-slate-700 transition-colors">
+              description="Accion principal. Equivale a bg-slate-800 con texto blanco."
+              code={`<!-- Boton primario oscuro (equiv: bg-slate-800) -->
+<button class="btn btn-dark rounded-3 px-4">
   Guardar cambios
+</button>
+
+<!-- Con icono -->
+<button class="btn btn-dark rounded-3 px-4">
+  <i class="bi bi-person-plus me-2"></i>
+  Asignar evaluadores
+</button>
+
+<!-- Ancho completo -->
+<button class="btn btn-dark rounded-3 w-100 py-3">
+  <i class="bi bi-person-plus me-2"></i>
+  Asignar nuevo evaluador
 </button>`}
             >
               <div className="flex flex-wrap gap-3 items-center">
@@ -376,10 +380,16 @@ function getScoreBar(score: number) {
 
             <Example
               title="Boton Secundario"
-              description="Accion alternativa. Borde gris con fondo transparente."
-              code={`<button className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm
-  font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+              description="Accion alternativa. Equivale a border border-gray-200."
+              code={`<!-- Boton secundario outline (equiv: border-gray-200) -->
+<button class="btn btn-outline-secondary rounded-3 px-4">
   Cancelar
+</button>
+
+<!-- Con icono -->
+<button class="btn btn-outline-secondary rounded-3 px-4">
+  <i class="bi bi-eye me-2"></i>
+  Ver resultados
 </button>`}
             >
               <div className="flex flex-wrap gap-3 items-center">
@@ -395,10 +405,21 @@ function getScoreBar(score: number) {
 
             <Example
               title="Boton con Icono"
-              description="Boton cuadrado para acciones rapidas con solo icono."
-              code={`<button className="w-8 h-8 rounded-lg flex items-center justify-center
-  text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
-  <Settings size={16} />
+              description="Boton cuadrado para acciones rapidas."
+              code={`<!-- Boton solo icono (equiv: w-8 h-8 rounded-lg) -->
+<button class="btn btn-sm btn-light rounded-3"
+  style="width: 2rem; height: 2rem; padding: 0;
+         display: inline-flex; align-items: center;
+         justify-content: center;">
+  <i class="bi bi-gear"></i>
+</button>
+
+<!-- Variante danger -->
+<button class="btn btn-sm btn-outline-danger rounded-3"
+  style="width: 2rem; height: 2rem; padding: 0;
+         display: inline-flex; align-items: center;
+         justify-content: center;">
+  <i class="bi bi-x"></i>
 </button>`}
             >
               <div className="flex flex-wrap gap-2 items-center">
@@ -420,9 +441,13 @@ function getScoreBar(score: number) {
             <Example
               title="Boton Deshabilitado"
               description="Estado inactivo con opacidad reducida."
-              code={`<button disabled className="px-4 py-2.5 rounded-xl bg-slate-800 text-white
-  text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
+              code={`<!-- Boton deshabilitado Bootstrap -->
+<button class="btn btn-dark rounded-3 px-4" disabled>
   No disponible
+</button>
+
+<button class="btn btn-outline-secondary rounded-3 px-4" disabled>
+  Cancelar
 </button>`}
             >
               <div className="flex flex-wrap gap-3 items-center">
@@ -437,10 +462,13 @@ function getScoreBar(score: number) {
 
             <Example
               title="Boton de Cierre (Modal)"
-              description="Boton circular para cerrar modales o paneles."
-              code={`<button className="w-7 h-7 rounded-full bg-white/70 hover:bg-white
-  flex items-center justify-center text-gray-500 transition-colors">
-  <X size={14} />
+              description="Boton circular para cerrar modales."
+              code={`<!-- Boton cierre circular (equiv: w-7 h-7 rounded-full) -->
+<button class="btn btn-sm btn-light rounded-circle"
+  style="width: 1.75rem; height: 1.75rem; padding: 0;
+         display: inline-flex; align-items: center;
+         justify-content: center;">
+  <i class="bi bi-x" style="font-size: 0.875rem"></i>
 </button>`}
             >
               <div className="flex gap-3 items-center">
@@ -454,23 +482,25 @@ function getScoreBar(score: number) {
           {/* ═══════════════════ BADGES ═══════════════════ */}
           <Section id="badges" title="Badges y Pills">
             <p className="text-sm text-gray-600 leading-relaxed">
-              Los badges comunican estados, clasificaciones y conteos de forma compacta. Se usan tres variantes principales: estado, clasificacion y rol.
+              Los badges de Bootstrap 5.1 con <code>rounded-pill</code> replican exactamente las pills del proyecto.
             </p>
 
             <Example
               title="Badges de Estado"
               description="Indican el estado de una evaluacion o proceso."
-              code={`<span className="text-[11px] font-bold px-2.5 py-1 rounded-full
-  bg-emerald-100 text-emerald-700">Completo</span>
-
-<span className="text-[11px] font-bold px-2.5 py-1 rounded-full
-  bg-blue-100 text-blue-700">En progreso</span>
-
-<span className="text-[11px] font-bold px-2.5 py-1 rounded-full
-  bg-amber-100 text-amber-700">Pendiente</span>
-
-<span className="text-[11px] font-bold px-2.5 py-1 rounded-full
-  bg-gray-100 text-gray-500">Sin asignar</span>`}
+              code={`<!-- Badges de estado con Bootstrap 5.1 -->
+<span class="badge rounded-pill bg-success bg-opacity-10 text-success">
+  Completo
+</span>
+<span class="badge rounded-pill bg-primary bg-opacity-10 text-primary">
+  En progreso
+</span>
+<span class="badge rounded-pill bg-warning bg-opacity-10 text-warning">
+  Pendiente
+</span>
+<span class="badge rounded-pill bg-secondary bg-opacity-10 text-secondary">
+  Sin asignar
+</span>`}
             >
               <div className="flex flex-wrap gap-3 items-center">
                 <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">Completo</span>
@@ -483,11 +513,11 @@ function getScoreBar(score: number) {
             <Example
               title="Badges de Clasificacion (Puntaje)"
               description="Colores dinamicos segun el puntaje de evaluacion."
-              code={`// Usando getScoreBg(score):
-<span className={\`text-[11px] font-bold px-2 py-1 rounded-full
-  \${getScoreBg(score)}\`}>
-  {getClassificationLabel(score)}
-</span>`}
+              code={`<!-- Badges de clasificacion Bootstrap 5.1 -->
+<span class="badge rounded-pill bg-success">Sobresaliente</span>
+<span class="badge rounded-pill bg-primary">Bueno</span>
+<span class="badge rounded-pill bg-warning text-dark">Regular</span>
+<span class="badge rounded-pill bg-danger">Deficiente</span>`}
             >
               <div className="flex flex-wrap gap-3 items-center">
                 {[4.5, 3.5, 2.5, 1.5].map(s => (
@@ -501,9 +531,30 @@ function getScoreBar(score: number) {
             <Example
               title="Badges de Rol (Evaluacion 360)"
               description="Cada rol de evaluador tiene su color semantico."
-              code={`<span className="inline-flex items-center gap-1.5 text-[10px] font-medium
-  px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700">
-  <User size={9} /> Auto
+              code={`<!-- Badges de rol con iconos Bootstrap -->
+<span class="badge rounded-pill"
+  style="background: rgba(37,99,235,0.1); color: #2563eb">
+  <i class="bi bi-person me-1"></i> Auto
+</span>
+<span class="badge rounded-pill"
+  style="background: rgba(13,148,136,0.1); color: #0d9488">
+  <i class="bi bi-briefcase me-1"></i> Lider
+</span>
+<span class="badge rounded-pill"
+  style="background: rgba(124,58,237,0.1); color: #7c3aed">
+  <i class="bi bi-people me-1"></i> Par
+</span>
+<span class="badge rounded-pill"
+  style="background: rgba(217,119,6,0.1); color: #d97706">
+  <i class="bi bi-person-check me-1"></i> Colaborador
+</span>
+<span class="badge rounded-pill"
+  style="background: rgba(220,38,38,0.1); color: #dc2626">
+  <i class="bi bi-globe me-1"></i> Cliente
+</span>
+<span class="badge rounded-pill"
+  style="background: rgba(100,116,139,0.1); color: #64748b">
+  <i class="bi bi-incognito me-1"></i> Anonimo
 </span>`}
             >
               <div className="flex flex-wrap gap-2 items-center">
@@ -525,11 +576,14 @@ function getScoreBar(score: number) {
             <Example
               title="Badge de Conteo"
               description="Indicador numerico posicionado absolutamente."
-              code={`<div className="relative">
-  <Users size={20} />
-  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full
-    bg-blue-600 text-white text-[10px] font-bold
-    flex items-center justify-center">3</span>
+              code={`<!-- Badge de conteo Bootstrap 5.1 -->
+<div class="position-relative d-inline-block">
+  <i class="bi bi-people fs-4"></i>
+  <span class="position-absolute top-0 start-100
+    translate-middle badge rounded-pill bg-primary"
+    style="font-size: 0.625rem">
+    3
+  </span>
 </div>`}
             >
               <div className="flex gap-4 items-center">
@@ -550,37 +604,46 @@ function getScoreBar(score: number) {
           {/* ═══════════════════ CARDS ═══════════════════ */}
           <Section id="cards" title="Cards">
             <p className="text-sm text-gray-600 leading-relaxed">
-              Las cards son el componente contenedor mas usado. Todas comparten bordes suaves, esquinas redondeadas y sombra minima.
+              Las cards de Bootstrap 5.1 con <code>border-0 shadow-sm</code> y bordes redondeados replican el estilo del proyecto.
             </p>
 
             <Example
               title="Card Base"
-              description="Contenedor estandar para cualquier seccion de contenido."
-              code={`<div className="bg-white rounded-2xl border border-gray-100
-  shadow-sm p-5">
-  Contenido aqui
+              description="Contenedor estandar. Equivale a rounded-2xl border shadow-sm."
+              code={`<!-- Card base Bootstrap 5.1 -->
+<div class="card border-0 shadow-sm" style="border-radius: 1rem">
+  <div class="card-body p-4">
+    Contenido aqui
+  </div>
 </div>`}
             >
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <p className="text-sm text-gray-700">Contenido de la card base. Usa <code className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded">rounded-2xl</code> y <code className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded">shadow-sm</code> como estandar.</p>
+                <p className="text-sm text-gray-700">Contenido de la card base. En Bootstrap: <code className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded">card border-0 shadow-sm</code> con <code className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded">border-radius: 1rem</code>.</p>
               </div>
             </Example>
 
             <Example
               title="Card KPI (Stat Card)"
               description="Muestra una metrica con icono, valor y subtexto."
-              code={`<div className="bg-white rounded-2xl border border-emerald-100
-  shadow-sm p-4 flex items-start gap-3">
-  <div className="w-9 h-9 rounded-xl bg-emerald-50
-    flex items-center justify-center shrink-0">
-    <CheckCircle2 size={16} className="text-emerald-600" />
-  </div>
-  <div>
-    <p className="text-xs text-gray-500">Completos</p>
-    <p className="text-xl font-black text-gray-900">12</p>
-    <p className="text-[10px] text-gray-400 mt-0.5">
-      evaluaciones finalizadas
-    </p>
+              code={`<!-- Card KPI Bootstrap 5.1 -->
+<div class="card border-0 shadow-sm"
+  style="border-radius: 1rem; border-left: 3px solid #059669">
+  <div class="card-body d-flex align-items-start gap-3">
+    <div class="rounded-3 d-flex align-items-center
+      justify-content-center"
+      style="width:2.25rem; height:2.25rem;
+             background: rgba(5,150,105,0.1)">
+      <i class="bi bi-check-circle text-success"></i>
+    </div>
+    <div>
+      <p class="text-muted mb-0" style="font-size:0.75rem">
+        Completos
+      </p>
+      <p class="fw-bolder mb-0 fs-4">12</p>
+      <small class="text-muted" style="font-size:0.625rem">
+        evaluaciones finalizadas
+      </small>
+    </div>
   </div>
 </div>`}
             >
@@ -621,13 +684,16 @@ function getScoreBar(score: number) {
             <Example
               title="Card con Header"
               description="Card con seccion de encabezado diferenciada."
-              code={`<div className="bg-white rounded-2xl border border-gray-100
-  shadow-sm overflow-hidden">
-  <div className="bg-gray-50 px-5 py-3 border-b border-gray-100">
-    <p className="text-xs font-bold text-gray-700 uppercase
-      tracking-wide">Titulo de seccion</p>
+              code={`<!-- Card con header Bootstrap 5.1 -->
+<div class="card border-0 shadow-sm"
+  style="border-radius: 1rem; overflow: hidden">
+  <div class="card-header bg-light border-bottom py-3 px-4">
+    <p class="text-uppercase fw-bold text-muted mb-0"
+      style="font-size: 0.75rem; letter-spacing: 0.05em">
+      Titulo de seccion
+    </p>
   </div>
-  <div className="p-5">
+  <div class="card-body p-4">
     Contenido
   </div>
 </div>`}
@@ -645,31 +711,38 @@ function getScoreBar(score: number) {
             <Example
               title="Card de Puntaje Global"
               description="Muestra el resultado de evaluacion con barra y clasificacion."
-              code={`<div className="rounded-2xl border p-4
-  bg-blue-50 border-blue-200">
-  <div className="flex items-center justify-between">
-    <div>
-      <p className="text-xs font-semibold text-gray-500">
-        Puntaje global 360
-      </p>
-      <p className="text-xs text-gray-500">3 respuestas</p>
-    </div>
-    <div className="text-right">
-      <div className="text-3xl font-black text-blue-600">
-        3.85
+              code={`<!-- Card de puntaje Bootstrap 5.1 -->
+<div class="card border-0 shadow-sm"
+  style="border-radius: 1rem; background: #eff6ff;
+         border: 1px solid #bfdbfe">
+  <div class="card-body p-4">
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <p class="text-muted fw-semibold mb-0"
+          style="font-size: 0.75rem">
+          Puntaje global 360
+        </p>
+        <small class="text-muted">3 respuestas</small>
       </div>
-      <div className="text-[10px] text-gray-400">de 5.0</div>
+      <div class="text-end">
+        <span class="fw-bolder text-primary"
+          style="font-size: 1.875rem">3.85</span>
+        <div class="text-muted" style="font-size:0.625rem">
+          de 5.0
+        </div>
+      </div>
     </div>
-  </div>
-  <div className="mt-2.5">
-    <div className="w-full bg-white/60 rounded-full h-2">
-      <div className="h-2 rounded-full"
-        style={{ width: '77%', backgroundColor: '#2563eb' }} />
+    <div class="mt-2">
+      <div class="progress" style="height: 0.5rem">
+        <div class="progress-bar" role="progressbar"
+          style="width: 77%; background-color: #2563eb">
+        </div>
+      </div>
+      <span class="badge rounded-pill bg-primary
+        bg-opacity-10 text-primary mt-2">
+        Bueno
+      </span>
     </div>
-    <span className="mt-1.5 inline-block text-[11px] font-bold
-      px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
-      Bueno
-    </span>
   </div>
 </div>`}
             >
@@ -697,21 +770,26 @@ function getScoreBar(score: number) {
           {/* ═══════════════════ INPUTS ═══════════════════ */}
           <Section id="inputs" title="Inputs y Formularios">
             <p className="text-sm text-gray-600 leading-relaxed">
-              Los campos de formulario usan bordes suaves, esquinas redondeadas y estados de focus consistentes.
+              Los formularios de Bootstrap 5.1 con clases de <code>form-control</code> y <code>form-select</code> replican los campos del proyecto.
             </p>
 
             <Example
               title="Input de Texto"
               description="Campo de texto estandar con icono de busqueda."
-              code={`<div className="relative flex-1">
-  <Search size={14} className="absolute left-3 top-1/2
-    -translate-y-1/2 text-gray-400 pointer-events-none" />
-  <input type="text" placeholder="Buscar..."
-    className="w-full pl-9 pr-3 py-2 text-sm border
-      border-gray-200 rounded-xl focus:outline-none
-      focus:ring-2 focus:ring-blue-500/30
-      focus:border-blue-400 bg-gray-50" />
-</div>`}
+              code={`<!-- Input con icono de busqueda Bootstrap 5.1 -->
+<div class="input-group">
+  <span class="input-group-text bg-light border-end-0">
+    <i class="bi bi-search text-muted"></i>
+  </span>
+  <input type="text" class="form-control border-start-0
+    bg-light" placeholder="Buscar colaborador..."
+    style="border-radius: 0 0.75rem 0.75rem 0">
+</div>
+
+<!-- Input sin icono -->
+<input type="text" class="form-control"
+  placeholder="Campo sin icono..."
+  style="border-radius: 0.75rem">`}
             >
               <div className="max-w-sm space-y-3">
                 <div className="relative">
@@ -725,18 +803,12 @@ function getScoreBar(score: number) {
             <Example
               title="Select Dropdown"
               description="Selector personalizado con icono ChevronDown."
-              code={`<div className="relative">
-  <select className="appearance-none pl-3 pr-8 py-2 text-sm
-    border border-gray-200 rounded-xl focus:outline-none
-    focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400
-    bg-gray-50 text-gray-700 cursor-pointer">
-    <option value="all">Todos</option>
-    <option>Tecnologia</option>
-  </select>
-  <ChevronDown size={12}
-    className="absolute right-2.5 top-1/2 -translate-y-1/2
-      text-gray-400 pointer-events-none" />
-</div>`}
+              code={`<!-- Select Bootstrap 5.1 -->
+<select class="form-select" style="border-radius: 0.75rem">
+  <option selected>Todas las areas</option>
+  <option value="1">Tecnologia</option>
+  <option value="2">Ventas</option>
+</select>`}
             >
               <div className="flex flex-wrap gap-3">
                 <div className="relative">
@@ -756,25 +828,17 @@ function getScoreBar(score: number) {
                   </select>
                   <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </div>
-                <div className="relative">
-                  <select className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 text-gray-700 cursor-pointer">
-                    <option value="all">Todos los periodos</option>
-                    <option>Q1 2025</option>
-                    <option>Q2 2025</option>
-                  </select>
-                  <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
               </div>
             </Example>
 
             <Example
               title="Textarea"
-              description="Area de texto multilinea sin resize."
-              code={`<textarea placeholder="Escribe aqui..."
-  className="w-full text-sm border border-gray-200 rounded-xl
-    px-3 py-2 resize-none focus:outline-none
-    focus:ring-2 focus:ring-blue-500/25 focus:border-blue-400"
-  rows={3} />`}
+              description="Area de texto multilinea."
+              code={`<!-- Textarea Bootstrap 5.1 -->
+<textarea class="form-control" rows="3"
+  placeholder="Escribe aqui..."
+  style="border-radius: 0.75rem; resize: none">
+</textarea>`}
             >
               <div className="max-w-sm">
                 <textarea placeholder="Escribe aqui..." className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-400" rows={3} />
@@ -784,14 +848,15 @@ function getScoreBar(score: number) {
             <Example
               title="Label con Campo"
               description="Estructura label + input con indicador de requerido."
-              code={`<div>
-  <label className="block text-xs font-medium text-gray-500 mb-1.5">
-    Nombre <span className="text-red-500">*</span>
+              code={`<!-- Label + Input Bootstrap 5.1 -->
+<div class="mb-3">
+  <label class="form-label text-muted"
+    style="font-size: 0.75rem; font-weight: 500">
+    Nombre <span class="text-danger">*</span>
   </label>
-  <input type="text" placeholder="Nombre completo"
-    className="w-full rounded-xl border border-gray-200
-      bg-white px-3.5 py-2.5 text-sm focus:outline-none
-      focus:ring-2 focus:ring-blue-500/25 focus:border-blue-400" />
+  <input type="text" class="form-control"
+    placeholder="Nombre completo"
+    style="border-radius: 0.75rem">
 </div>`}
             >
               <div className="max-w-sm space-y-4">
@@ -810,28 +875,55 @@ function getScoreBar(score: number) {
           {/* ═══════════════════ TABLAS ═══════════════════ */}
           <Section id="tablas" title="Tablas">
             <p className="text-sm text-gray-600 leading-relaxed">
-              Las tablas usan filas con hover, divisores sutiles y alineacion consistente. Se usan dentro de cards con header.
+              Las tablas de Bootstrap 5.1 con <code>table-hover</code> y <code>table-sm</code> replican el estilo del proyecto.
             </p>
 
             <Example
               title="Tabla con Header y Filas"
               description="Tabla estandar con columnas alineadas y estados hover."
-              code={`<div className="bg-white rounded-2xl border border-gray-100
-  shadow-sm overflow-hidden">
-  <div className="overflow-x-auto">
-    <table className="w-full">
-      <thead>
-        <tr className="border-b border-gray-100 bg-gray-50/80">
-          <th className="px-5 py-3 text-left text-xs font-semibold
-            text-gray-500 uppercase tracking-wide">Nombre</th>
-          <th className="px-4 py-3 text-left text-xs font-semibold
-            text-gray-500 uppercase tracking-wide">Estado</th>
+              code={`<!-- Tabla Bootstrap 5.1 -->
+<div class="card border-0 shadow-sm"
+  style="border-radius: 1rem; overflow: hidden">
+  <div class="table-responsive">
+    <table class="table table-sm table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="ps-4 text-uppercase fw-semibold text-muted"
+            style="font-size:0.7rem; letter-spacing:0.05em">
+            Colaborador
+          </th>
+          <th class="text-uppercase fw-semibold text-muted"
+            style="font-size:0.7rem; letter-spacing:0.05em">
+            Area
+          </th>
+          <th class="text-uppercase fw-semibold text-muted"
+            style="font-size:0.7rem; letter-spacing:0.05em">
+            Puntaje
+          </th>
+          <th class="text-uppercase fw-semibold text-muted"
+            style="font-size:0.7rem; letter-spacing:0.05em">
+            Estado
+          </th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-gray-50">
-        <tr className="hover:bg-gray-50/60 transition-colors">
-          <td className="px-5 py-3.5 text-sm">...</td>
-          <td className="px-4 py-3.5">...</td>
+      <tbody>
+        <tr>
+          <td class="ps-4">
+            <div class="d-flex align-items-center gap-2">
+              <div class="rounded-3 bg-light d-flex
+                align-items-center justify-content-center"
+                style="width:2rem; height:2rem">
+                <small class="fw-bold text-secondary">AT</small>
+              </div>
+              <span class="fw-semibold">Ana Torres</span>
+            </div>
+          </td>
+          <td><small class="text-muted">Tecnologia</small></td>
+          <td><span class="fw-bolder text-success">4.50</span></td>
+          <td>
+            <span class="badge rounded-pill bg-success
+              bg-opacity-10 text-success">Completo</span>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -886,29 +978,30 @@ function getScoreBar(score: number) {
             </Example>
 
             <Example
-              title="Fila Expandible"
-              description="Fila de tabla que se expande para mostrar detalle inline."
-              code={`<tr className="hover:bg-gray-50/60 transition-colors cursor-pointer"
-  onClick={() => toggle(id)}>
-  <td>...</td>
-  <td>
-    <div className="w-7 h-7 rounded-lg flex items-center
-      justify-center transition-all">
-      {isExpanded ? <ChevronUp size={14} />
-        : <ChevronDown size={14} />}
-    </div>
-  </td>
-</tr>
-{isExpanded && (
-  <tr className="bg-slate-50/60">
-    <td colSpan={6} className="px-5 py-5">
-      <div className="bg-white rounded-2xl border
-        border-gray-100 shadow-sm">
-        Panel de detalle
+              title="Fila Expandible (Accordion)"
+              description="Fila que se expande para mostrar detalle inline."
+              code={`<!-- Fila expandible con Accordion Bootstrap 5.1 -->
+<div class="accordion" id="tableAccordion">
+  <div class="accordion-item border-0">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed py-3"
+        type="button" data-bs-toggle="accordion"
+        data-bs-target="#row1">
+        <div class="d-flex align-items-center gap-3 w-100">
+          <span class="fw-semibold">Ejemplo 1</span>
+        </div>
+      </button>
+    </h2>
+    <div id="row1" class="accordion-collapse collapse"
+      data-bs-parent="#tableAccordion">
+      <div class="accordion-body bg-light">
+        <div class="card border-0 shadow-sm p-3">
+          Panel de detalle expandido inline.
+        </div>
       </div>
-    </td>
-  </tr>
-)}`}
+    </div>
+  </div>
+</div>`}
             >
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
@@ -951,23 +1044,27 @@ function getScoreBar(score: number) {
           {/* ═══════════════════ PROGRESS ═══════════════════ */}
           <Section id="progress" title="Barras de Progreso">
             <p className="text-sm text-gray-600 leading-relaxed">
-              Las barras de progreso comunican avance de evaluaciones y puntajes. Usan colores semanticos segun el porcentaje o puntaje.
+              Bootstrap 5.1 tiene el componente <code>progress</code> nativo que replica las barras del proyecto.
             </p>
 
             <Example
               title="Barra de Progreso Horizontal"
               description="Barra estandar para avance de evaluaciones."
-              code={`<div className="flex items-center gap-2">
-  <div className="w-20 bg-gray-100 rounded-full h-1.5">
-    <div className="h-1.5 rounded-full transition-all"
-      style={{
-        width: \`\${pct}%\`,
-        backgroundColor: pct === 100 ? '#059669' : '#2563eb'
-      }} />
+              code={`<!-- Barra de progreso Bootstrap 5.1 -->
+<div class="d-flex align-items-center gap-2">
+  <div class="progress" style="width: 5rem; height: 0.375rem">
+    <div class="progress-bar bg-success" role="progressbar"
+      style="width: 100%"></div>
   </div>
-  <span className="text-[11px] text-gray-500">
-    {completed}/{total}
-  </span>
+  <small class="text-muted">5/5</small>
+</div>
+
+<div class="d-flex align-items-center gap-2">
+  <div class="progress" style="width: 5rem; height: 0.375rem">
+    <div class="progress-bar" role="progressbar"
+      style="width: 60%"></div>
+  </div>
+  <small class="text-muted">3/5</small>
 </div>`}
             >
               <div className="space-y-4">
@@ -990,12 +1087,18 @@ function getScoreBar(score: number) {
             <Example
               title="Barra de Puntaje (0-5)"
               description="Barra que representa un puntaje sobre 5 con color dinamico."
-              code={`<div className="w-full bg-gray-100 rounded-full h-2">
-  <div className="h-2 rounded-full transition-all"
-    style={{
-      width: \`\${(score / 5) * 100}%\`,
-      backgroundColor: getScoreBar(score)
-    }} />
+              code={`<!-- Barra de puntaje Bootstrap 5.1 -->
+<div class="d-flex align-items-center gap-3">
+  <span class="fw-bolder text-success" style="width:2.5rem">
+    4.5
+  </span>
+  <div class="progress flex-grow-1"
+    style="height: 0.5rem">
+    <div class="progress-bar bg-success" role="progressbar"
+      style="width: 90%"></div>
+  </div>
+  <span class="badge rounded-pill bg-success
+    bg-opacity-10 text-success">Sobresaliente</span>
 </div>`}
             >
               <div className="space-y-4">
@@ -1014,21 +1117,21 @@ function getScoreBar(score: number) {
             <Example
               title="Barra de Competencia"
               description="Barra delgada con label para cada competencia evaluada."
-              code={`<div className="flex items-center gap-3">
-  <span className="text-[10px] font-bold text-gray-300 w-4">
-    {idx + 1}
-  </span>
-  <div className="flex-1 min-w-0">
-    <div className="flex items-center justify-between mb-1">
-      <span className="text-[11px] font-semibold text-gray-800
-        truncate">Liderazgo</span>
-      <span className="text-[11px] font-black text-green-600">
-        4.2
+              code={`<!-- Barra de competencia Bootstrap 5.1 -->
+<div class="d-flex align-items-center gap-2 mb-1">
+  <span class="fw-bold text-muted" style="font-size:0.625rem;
+    width: 1rem">1</span>
+  <div class="flex-grow-1">
+    <div class="d-flex justify-content-between mb-1">
+      <span class="fw-semibold" style="font-size:0.7rem">
+        Liderazgo
       </span>
+      <span class="fw-bolder text-success"
+        style="font-size:0.7rem">4.2</span>
     </div>
-    <div className="w-full bg-gray-100 rounded-full h-1">
-      <div className="h-1 rounded-full"
-        style={{ width: '84%', backgroundColor: '#059669' }} />
+    <div class="progress" style="height: 0.25rem">
+      <div class="progress-bar bg-success" role="progressbar"
+        style="width: 84%"></div>
     </div>
   </div>
 </div>`}
@@ -1060,22 +1163,26 @@ function getScoreBar(score: number) {
           {/* ═══════════════════ TABS ═══════════════════ */}
           <Section id="tabs" title="Tabs y Navegacion">
             <p className="text-sm text-gray-600 leading-relaxed">
-              Los tabs organizan contenido en sub-vistas. Hay dos variantes: tabs tipo pill (fondo redondeado) y tabs tipo underline (linea inferior).
+              Bootstrap 5.1 provee <code>nav-tabs</code> y <code>nav-pills</code> que replican los tabs del proyecto.
             </p>
 
             <Example
               title="Tabs tipo Pill"
               description="Tabs con fondo redondeado y sombra en el activo."
-              code={`<div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
-  <button className="flex items-center gap-2 px-4 py-2 rounded-lg
-    text-sm font-semibold bg-white text-gray-900 shadow-sm">
-    <Users size={15} /> Colaboradores
-  </button>
-  <button className="flex items-center gap-2 px-4 py-2 rounded-lg
-    text-sm font-semibold text-gray-500 hover:text-gray-700">
-    <BarChart2 size={15} /> Resultados
-  </button>
-</div>`}
+              code={`<!-- Tabs tipo pill Bootstrap 5.1 -->
+<ul class="nav nav-pills bg-light rounded-3 p-1"
+  style="width: fit-content">
+  <li class="nav-item">
+    <a class="nav-link active rounded-3 shadow-sm" href="#">
+      <i class="bi bi-people me-1"></i> Colaboradores
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link text-muted rounded-3" href="#">
+      <i class="bi bi-bar-chart me-1"></i> Resultados
+    </a>
+  </li>
+</ul>`}
             >
               <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
                 <button type="button" className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-white text-gray-900 shadow-sm">
@@ -1090,16 +1197,24 @@ function getScoreBar(score: number) {
             <Example
               title="Tabs tipo Underline"
               description="Tabs con linea inferior en el activo."
-              code={`<div className="border-b border-gray-100">
-  <div className="flex items-center overflow-x-auto">
-    <button className="flex items-center gap-2 px-4 py-3
-      border-b-2 font-medium text-sm border-blue-500
-      text-blue-600">Resumen</button>
-    <button className="flex items-center gap-2 px-4 py-3
-      border-b-2 font-medium text-sm border-transparent
-      text-gray-600 hover:text-gray-900">Resultados</button>
-  </div>
-</div>`}
+              code={`<!-- Tabs tipo underline Bootstrap 5.1 -->
+<ul class="nav nav-tabs border-bottom">
+  <li class="nav-item">
+    <a class="nav-link active" href="#">
+      <i class="bi bi-bar-chart me-2"></i> Resumen
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link text-muted" href="#">
+      <i class="bi bi-eye me-2"></i> Resultados
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link text-muted" href="#">
+      <i class="bi bi-clock me-2"></i> Seguimiento
+    </a>
+  </li>
+</ul>`}
             >
               <div className="border-b border-gray-100">
                 <div className="flex items-center overflow-x-auto">
@@ -1119,19 +1234,34 @@ function getScoreBar(score: number) {
             <Example
               title="Tabs tipo Panel (Interno)"
               description="Tabs compactos dentro de un panel de detalle."
-              code={`<div className="flex gap-1 p-2 bg-gray-50 border-b
-  border-gray-100">
-  <button className="flex-1 flex items-center justify-center
-    gap-1 py-1.5 rounded-lg text-xs font-semibold
-    bg-white text-gray-900 shadow-sm">
-    <BarChart3 size={13} /> Resumen
-  </button>
-  <button className="flex-1 flex items-center justify-center
-    gap-1 py-1.5 rounded-lg text-xs font-semibold
-    text-gray-500 hover:text-gray-700">
-    <UserPlus size={13} /> Asignar
-  </button>
-</div>`}
+              code={`<!-- Tabs internos Bootstrap 5.1 -->
+<ul class="nav nav-pills nav-fill bg-light p-2
+  border-bottom">
+  <li class="nav-item">
+    <a class="nav-link active rounded-3 shadow-sm"
+      style="font-size: 0.75rem" href="#">
+      <i class="bi bi-bar-chart me-1"></i> Resumen
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link text-muted rounded-3"
+      style="font-size: 0.75rem" href="#">
+      <i class="bi bi-person-plus me-1"></i> Asignar
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link text-muted rounded-3"
+      style="font-size: 0.75rem" href="#">
+      <i class="bi bi-clock me-1"></i> Seguimiento
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link text-muted rounded-3"
+      style="font-size: 0.75rem" href="#">
+      <i class="bi bi-eye me-1"></i> Resultados
+    </a>
+  </li>
+</ul>`}
             >
               <div className="flex gap-1 p-2 bg-gray-50 border-b border-gray-100 rounded-t-xl">
                 <button type="button" className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-semibold bg-white text-gray-900 shadow-sm">
@@ -1153,36 +1283,42 @@ function getScoreBar(score: number) {
           {/* ═══════════════════ MODALS ═══════════════════ */}
           <Section id="modals" title="Modales y Overlays">
             <p className="text-sm text-gray-600 leading-relaxed">
-              Los modales usan un overlay oscuro con blur y un dialog centrado con esquinas redondeadas.
+              El componente <code>modal</code> de Bootstrap 5.1 replica exactamente los modales del proyecto.
             </p>
 
             <Example
-              title="Overlay y Dialog"
-              description="Estructura base de un modal."
-              code={`{/* Overlay */}
-<div className="fixed inset-0 z-50 bg-black/40
-  backdrop-blur-sm flex items-center justify-center p-4">
+              title="Modal"
+              description="Estructura base de un modal con overlay y dialog."
+              code={`<!-- Modal Bootstrap 5.1 -->
+<div class="modal fade show" id="assignModal"
+  tabindex="-1" style="display: block">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content"
+      style="border: none; border-radius: 1rem;
+             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+             overflow: hidden">
 
-  {/* Dialog */}
-  <div className="bg-white rounded-2xl shadow-2xl
-    w-full max-w-lg overflow-hidden">
-    {/* Header */}
-    <div className="p-5 bg-gradient-to-br from-slate-50
-      to-gray-100">
-      <div className="flex items-start justify-between">
-        <h3 className="text-base font-bold text-gray-900">
-          Titulo del modal
-        </h3>
-        <button className="w-7 h-7 rounded-full bg-white/70
-          hover:bg-white flex items-center justify-center
-          text-gray-500">
-          <X size={14} />
-        </button>
+      <!-- Header con gradiente -->
+      <div class="modal-header border-0"
+        style="background: linear-gradient(to bottom right,
+               #f8fafc, #f3f4f6)">
+        <h5 class="modal-title fw-bold">Asignar Evaluador</h5>
+        <button type="button" class="btn-close"
+          data-bs-dismiss="modal"></button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body">
+        <p class="text-muted">Contenido del modal aqui.</p>
       </div>
     </div>
-    {/* Body */}
-    <div className="p-5">Contenido</div>
   </div>
+</div>
+
+<!-- Overlay (backdrop) -->
+<div class="modal-backdrop show"
+  style="background: rgba(0,0,0,0.4);
+         backdrop-filter: blur(4px)">
 </div>`}
             >
               <div className="relative bg-gray-100 rounded-2xl overflow-hidden" style={{ minHeight: 280 }}>
@@ -1208,23 +1344,24 @@ function getScoreBar(score: number) {
           {/* ═══════════════════ EMPTY STATES ═══════════════════ */}
           <Section id="empty" title="Estados Vacios">
             <p className="text-sm text-gray-600 leading-relaxed">
-              Los estados vacios guian al usuario cuando no hay datos. Usan un icono grande, titulo y descripcion.
+              Los estados vacios se construyen con utilidades de flex y espaciado de Bootstrap 5.1.
             </p>
 
             <Example
               title="Estado Vacio Estandar"
               description="Para secciones sin datos."
-              code={`<div className="flex flex-col items-center justify-center
-  py-20 text-center">
-  <div className="w-14 h-14 bg-gray-100 rounded-2xl
-    flex items-center justify-center mb-4">
-    <Users size={22} className="text-gray-300" />
+              code={`<!-- Estado vacio Bootstrap 5.1 -->
+<div class="d-flex flex-column align-items-center
+  justify-content-center py-5 text-center">
+  <div class="rounded-3 bg-light d-flex align-items-center
+    justify-content-center mb-3"
+    style="width: 3.5rem; height: 3.5rem">
+    <i class="bi bi-people text-muted fs-4"></i>
   </div>
-  <h4 className="text-sm font-semibold text-gray-400">
-    Sin resultados
-  </h4>
-  <p className="text-xs text-gray-300 mt-1 max-w-xs
-    leading-relaxed">
+  <h6 class="text-muted fw-semibold"
+    style="font-size: 0.875rem">Sin resultados</h6>
+  <p class="text-muted mb-0"
+    style="font-size: 0.75rem; max-width: 20rem">
     No se encontraron colaboradores con los filtros actuales.
   </p>
 </div>`}
@@ -1250,18 +1387,21 @@ function getScoreBar(score: number) {
             <Example
               title="Estado Vacio con Card"
               description="Estado vacio dentro de una card con accion sugerida."
-              code={`<div className="bg-white rounded-2xl border border-gray-100
-  shadow-sm flex flex-col items-center justify-center
-  min-h-[400px] p-8 text-center">
-  <div className="w-16 h-16 bg-gray-50 rounded-2xl
-    flex items-center justify-center mb-4">
-    <Users size={26} className="text-gray-300" />
+              code={`<!-- Estado vacio en card Bootstrap 5.1 -->
+<div class="card border-0 shadow-sm d-flex flex-column
+  align-items-center justify-content-center text-center"
+  style="border-radius: 1rem; min-height: 25rem; padding: 2rem">
+  <div class="rounded-3 bg-light d-flex align-items-center
+    justify-content-center mb-3"
+    style="width: 4rem; height: 4rem">
+    <i class="bi bi-people text-muted fs-2"></i>
   </div>
-  <h4 className="text-sm font-semibold text-gray-500">
+  <h6 class="text-muted fw-semibold"
+    style="font-size: 0.875rem">
     Selecciona un colaborador
-  </h4>
-  <p className="text-xs text-gray-400 mt-1.5 max-w-xs
-    leading-relaxed">
+  </h6>
+  <p class="text-muted mb-0"
+    style="font-size: 0.75rem; max-width: 20rem">
     Haz clic en una ficha para ver el resumen.
   </p>
 </div>`}
@@ -1279,43 +1419,58 @@ function getScoreBar(score: number) {
           {/* ═══════════════════ 9-BOX GRID ═══════════════════ */}
           <Section id="grid9" title="Grid 9 Box">
             <p className="text-sm text-gray-600 leading-relaxed">
-              El grid 9-box es el componente central del Nine Box Grid. Cada celda tiene colores configurables, avatar de empleado y badge de conteo.
+              El grid 9-box se construye con el sistema de grid de Bootstrap 5.1 y CSS custom properties para los colores dinamicos.
             </p>
 
             <Example
               title="Celda del 9-Box"
               description="Celda individual con color, label y avatares."
-              code={`<div className="min-h-[118px] rounded-xl border-2 p-3
-  relative transition-all hover:scale-[1.01]"
-  style={{
-    borderColor: '#065f46',
-    backgroundColor: '#d1fae5'
-  }}>
-  <div className="flex items-center justify-between mb-2">
-    <span className="text-[10px] font-black"
-      style={{ color: '#065f46' }}>A</span>
-    <span className="text-[10px] font-bold"
-      style={{ color: '#065f46' }}>Estrella</span>
-  </div>
-  <p className="text-[9px] leading-tight mb-2"
-    style={{ color: '#065f46' }}>
-    100% VALORES / 100% RESULTADOS
-  </p>
-  {/* Avatars */}
-  <div className="flex -space-x-1.5">
-    <div className="w-7 h-7 rounded-full border-2 border-white
-      flex items-center justify-center text-[10px] font-bold"
-      style={{ backgroundColor: '#065f46', color: 'white' }}>
-      AT
+              code={`<!-- 9-Box Grid Bootstrap 5.1 -->
+<div class="container-fluid">
+  <div class="row g-2">
+
+    <!-- Celda: Estrella (A) -->
+    <div class="col-4">
+      <div class="position-relative p-3 rounded-3 border"
+        style="min-height: 7.5rem;
+               border-color: #065f46;
+               background-color: #d1fae5;
+               transition: transform 0.2s">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="fw-black" style="font-size:0.625rem;
+            color: #065f46">A</span>
+          <span class="fw-bold" style="font-size:0.625rem;
+            color: #065f46">Estrella</span>
+        </div>
+        <p style="font-size:0.5625rem; color: #065f46;
+          line-height: 1.2">
+          100% VALORES / 100% RESULTADOS
+        </p>
+        <!-- Avatares -->
+        <div class="d-flex">
+          <div class="rounded-circle border border-white d-flex
+            align-items-center justify-content-center"
+            style="width:1.75rem; height:1.75rem;
+                   background: #065f46; color: white;
+                   font-size:0.625rem; font-weight:700;
+                   margin-right: -0.375rem">
+            AT
+          </div>
+        </div>
+        <!-- Badge de conteo -->
+        <span class="position-absolute rounded-circle
+          d-flex align-items-center justify-content-center"
+          style="top: 0.375rem; right: 0.375rem;
+                 width: 1.25rem; height: 1.25rem;
+                 font-size: 0.625rem; font-weight: 700;
+                 background: rgba(6,95,70,0.2);
+                 color: #065f46">3</span>
+      </div>
     </div>
+
+    <!-- Repetir para B4, B3, B2, C, B1, D, E, F -->
+
   </div>
-  {/* Count badge */}
-  <span className="absolute top-1.5 right-1.5 w-5 h-5
-    rounded-full flex items-center justify-center
-    text-[10px] font-bold"
-    style={{ backgroundColor: '#065f4620', color: '#065f46' }}>
-    3
-  </span>
 </div>`}
             >
               <div className="grid grid-cols-3 gap-3 max-w-lg">
@@ -1358,21 +1513,19 @@ function getScoreBar(score: number) {
             </div>
             <div className="space-y-6">
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
-                <h3 className="text-sm font-bold text-gray-700">Sistema de Espaciado (8px)</h3>
-                <p className="text-xs text-gray-500">El proyecto usa un sistema basado en 8px con las clases de Tailwind.</p>
+                <h3 className="text-sm font-bold text-gray-700">Equivalencia de Espaciado</h3>
+                <p className="text-xs text-gray-500">El proyecto usa Tailwind; aqui la equivalencia con Bootstrap 5.1 spacing utilities.</p>
                 <div className="space-y-2">
                   {[
-                    { px: 8, label: 'p-2', desc: 'Padding compacto (badges, chips)' },
-                    { px: 12, label: 'p-3', desc: 'Padding pequeno (items de lista)' },
-                    { px: 16, label: 'p-4', desc: 'Padding estandar (cards KPI)' },
-                    { px: 20, label: 'p-5', desc: 'Padding generico (cards, modales)' },
-                    { px: 24, label: 'p-6', desc: 'Padding amplio (secciones)' },
+                    { tw: 'p-2', bs: 'p-2', desc: 'Padding compacto (badges, chips)' },
+                    { tw: 'p-3', bs: 'p-3', desc: 'Padding pequeno (items de lista)' },
+                    { tw: 'p-4', bs: 'p-4', desc: 'Padding estandar (cards KPI)' },
+                    { tw: 'p-5', bs: 'p-5', desc: 'Padding generico (cards, modales)' },
+                    { tw: 'p-6', bs: 'p-6', desc: 'Padding amplio (secciones)' },
                   ].map(s => (
-                    <div key={s.label} className="flex items-center gap-3">
-                      <div className="w-20 shrink-0">
-                        <div className="bg-blue-100 rounded" style={{ width: s.px, height: s.px }} />
-                      </div>
-                      <code className="text-[11px] font-mono text-gray-600 w-10">{s.label}</code>
+                    <div key={s.tw} className="flex items-center gap-3 border-b border-gray-50 pb-2 last:border-0">
+                      <code className="text-[11px] font-mono text-blue-600 w-16">Tailwind: {s.tw}</code>
+                      <code className="text-[11px] font-mono text-green-600 w-16">BS5: {s.bs}</code>
                       <span className="text-[11px] text-gray-400">{s.desc}</span>
                     </div>
                   ))}
@@ -1381,19 +1534,17 @@ function getScoreBar(score: number) {
 
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
                 <h3 className="text-sm font-bold text-gray-700">Border Radius</h3>
-                <div className="flex flex-wrap gap-4">
+                <div className="space-y-2">
                   {[
-                    { cls: 'rounded-lg', desc: 'Botones, inputs' },
-                    { cls: 'rounded-xl', desc: 'Avatares, iconos' },
-                    { cls: 'rounded-2xl', desc: 'Cards, modales' },
-                    { cls: 'rounded-full', desc: 'Badges, avatares circulares' },
+                    { tw: 'rounded-lg', bs: 'rounded-3', desc: 'Botones, inputs' },
+                    { tw: 'rounded-xl', bs: 'rounded-4', desc: 'Avatares, iconos' },
+                    { tw: 'rounded-2xl', bs: 'style="border-radius: 1rem"', desc: 'Cards, modales' },
+                    { tw: 'rounded-full', bs: 'rounded-circle / rounded-pill', desc: 'Badges, avatares circulares' },
                   ].map(r => (
-                    <div key={r.cls} className="flex items-center gap-2">
-                      <div className={`w-10 h-10 bg-blue-100 border border-blue-200 ${r.cls}`} />
-                      <div>
-                        <code className="text-[11px] font-mono text-gray-700">{r.cls}</code>
-                        <p className="text-[10px] text-gray-400">{r.desc}</p>
-                      </div>
+                    <div key={r.tw} className="flex items-center gap-3 border-b border-gray-50 pb-2 last:border-0">
+                      <code className="text-[11px] font-mono text-blue-600 w-24">Tailwind: {r.tw}</code>
+                      <code className="text-[11px] font-mono text-green-600 w-44">BS5: {r.bs}</code>
+                      <span className="text-[11px] text-gray-400">{r.desc}</span>
                     </div>
                   ))}
                 </div>
@@ -1401,16 +1552,18 @@ function getScoreBar(score: number) {
 
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
                 <h3 className="text-sm font-bold text-gray-700">Shadows</h3>
-                <div className="flex flex-wrap gap-4">
+                <div className="space-y-2">
                   {[
-                    { cls: 'shadow-sm', desc: 'Cards, inputs' },
-                    { cls: 'shadow-md', desc: 'Cards seleccionadas' },
-                    { cls: 'shadow-lg', desc: 'Dropdowns' },
-                    { cls: 'shadow-xl', desc: 'Paneles de detalle' },
-                    { cls: 'shadow-2xl', desc: 'Modales' },
+                    { tw: 'shadow-sm', bs: 'shadow-sm', desc: 'Cards, inputs' },
+                    { tw: 'shadow-md', bs: 'shadow', desc: 'Cards seleccionadas' },
+                    { tw: 'shadow-lg', bs: 'shadow-lg', desc: 'Dropdowns' },
+                    { tw: 'shadow-xl', bs: 'shadow-lg', desc: 'Paneles de detalle' },
+                    { tw: 'shadow-2xl', bs: 'style="box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25)"', desc: 'Modales' },
                   ].map(s => (
-                    <div key={s.cls} className={`w-20 h-14 bg-white rounded-xl ${s.cls} flex items-center justify-center`}>
-                      <code className="text-[10px] font-mono text-gray-500">{s.cls}</code>
+                    <div key={s.tw} className="flex items-center gap-3 border-b border-gray-50 pb-2 last:border-0">
+                      <code className="text-[11px] font-mono text-blue-600 w-24">Tailwind: {s.tw}</code>
+                      <code className="text-[11px] font-mono text-green-600 break-all">BS5: {s.bs}</code>
+                      <span className="text-[11px] text-gray-400 shrink-0">{s.desc}</span>
                     </div>
                   ))}
                 </div>
@@ -1418,11 +1571,17 @@ function getScoreBar(score: number) {
 
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
                 <h3 className="text-sm font-bold text-gray-700">Grids Responsive</h3>
-                <div className="space-y-2 text-xs text-gray-600 font-mono">
-                  <p>grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4</p>
-                  <p>grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4</p>
-                  <p>grid grid-cols-3 gap-4</p>
-                  <p>grid grid-cols-2 gap-2</p>
+                <div className="space-y-2 text-xs">
+                  {[
+                    { tw: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4', bs: 'row g-3 > col-12 col-sm-6 col-lg-4' },
+                    { tw: 'grid grid-cols-3 gap-4', bs: 'row g-3 > col-4' },
+                    { tw: 'grid grid-cols-2 gap-2', bs: 'row g-2 > col-6' },
+                  ].map(g => (
+                    <div key={g.tw} className="border-b border-gray-50 pb-2 last:border-0">
+                      <p className="font-mono text-blue-600 text-[11px]">Tailwind: {g.tw}</p>
+                      <p className="font-mono text-green-600 text-[11px]">BS5: {g.bs}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1431,53 +1590,63 @@ function getScoreBar(score: number) {
           {/* ═══════════════════ ICONS REFERENCE ═══════════════════ */}
           <section id="icons" className="scroll-mt-24">
             <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3">Iconos (Lucide React)</h2>
+              <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3">Iconos</h2>
             </div>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <p className="text-xs text-gray-500 mb-4">Todos los iconos usan <code className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">lucide-react</code>. Tamanos comunes: 12, 13, 14, 15, 16, 18, 20, 22, 26.</p>
-              <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+              <p className="text-xs text-gray-500">
+                El proyecto usa <strong>Lucide React</strong>. La equivalencia con <strong>Bootstrap Icons</strong> se muestra abajo.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {[
-                  { icon: <Users size={18} />, name: 'Users' },
-                  { icon: <User size={18} />, name: 'User' },
-                  { icon: <UserPlus size={18} />, name: 'UserPlus' },
-                  { icon: <UserCheck size={18} />, name: 'UserCheck' },
-                  { icon: <CheckCircle2 size={18} />, name: 'CheckCircle2' },
-                  { icon: <AlertCircle size={18} />, name: 'AlertCircle' },
-                  { icon: <Search size={18} />, name: 'Search' },
-                  { icon: <BarChart3 size={18} />, name: 'BarChart3' },
-                  { icon: <BarChart2 size={18} />, name: 'BarChart2' },
-                  { icon: <TrendingUp size={18} />, name: 'TrendingUp' },
-                  { icon: <Award size={18} />, name: 'Award' },
-                  { icon: <Star size={18} />, name: 'Star' },
-                  { icon: <Target size={18} />, name: 'Target' },
-                  { icon: <Eye size={18} />, name: 'Eye' },
-                  { icon: <Clock size={18} />, name: 'Clock' },
-                  { icon: <Briefcase size={18} />, name: 'Briefcase' },
-                  { icon: <Globe size={18} />, name: 'Globe' },
-                  { icon: <Equal size={18} />, name: 'Equal' },
-                  { icon: <Link2 size={18} />, name: 'Link2' },
-                  { icon: <Copy size={18} />, name: 'Copy' },
-                  { icon: <Plus size={18} />, name: 'Plus' },
-                  { icon: <Trash2 size={18} />, name: 'Trash2' },
-                  { icon: <Settings size={18} />, name: 'Settings' },
-                  { icon: <Shield size={18} />, name: 'Shield' },
-                  { icon: <ChevronDown size={18} />, name: 'ChevronDown' },
-                  { icon: <ChevronUp size={18} />, name: 'ChevronUp' },
-                  { icon: <ChevronRight size={18} />, name: 'ChevronRight' },
-                  { icon: <X size={18} />, name: 'X' },
-                  { icon: <Menu size={18} />, name: 'Menu' },
-                  { icon: <FileText size={18} />, name: 'FileText' },
-                  { icon: <Layers size={18} />, name: 'Layers' },
-                  { icon: <Building2 size={18} />, name: 'Building2' },
-                  { icon: <Zap size={18} />, name: 'Zap' },
-                  { icon: <BookOpen size={18} />, name: 'BookOpen' },
+                  { lucide: 'Users', bs: 'bi-people' },
+                  { lucide: 'User', bs: 'bi-person' },
+                  { lucide: 'UserPlus', bs: 'bi-person-plus' },
+                  { lucide: 'UserCheck', bs: 'bi-person-check' },
+                  { lucide: 'CheckCircle2', bs: 'bi-check-circle' },
+                  { lucide: 'AlertCircle', bs: 'bi-exclamation-circle' },
+                  { lucide: 'Search', bs: 'bi-search' },
+                  { lucide: 'BarChart3', bs: 'bi-bar-chart' },
+                  { lucide: 'BarChart2', bs: 'bi-bar-chart-line' },
+                  { lucide: 'TrendingUp', bs: 'bi-graph-up-arrow' },
+                  { lucide: 'Award', bs: 'bi-award' },
+                  { lucide: 'Star', bs: 'bi-star' },
+                  { lucide: 'Target', bs: 'bi-bullseye' },
+                  { lucide: 'Eye', bs: 'bi-eye' },
+                  { lucide: 'Clock', bs: 'bi-clock' },
+                  { lucide: 'Briefcase', bs: 'bi-briefcase' },
+                  { lucide: 'Globe', bs: 'bi-globe' },
+                  { lucide: 'Link2', bs: 'bi-link-45deg' },
+                  { lucide: 'Copy', bs: 'bi-clipboard' },
+                  { lucide: 'Plus', bs: 'bi-plus' },
+                  { lucide: 'Trash2', bs: 'bi-trash' },
+                  { lucide: 'Settings', bs: 'bi-gear' },
+                  { lucide: 'Shield', bs: 'bi-shield' },
+                  { lucide: 'ChevronDown', bs: 'bi-chevron-down' },
+                  { lucide: 'ChevronUp', bs: 'bi-chevron-up' },
+                  { lucide: 'ChevronRight', bs: 'bi-chevron-right' },
+                  { lucide: 'X', bs: 'bi-x' },
+                  { lucide: 'Menu', bs: 'bi-list' },
+                  { lucide: 'FileText', bs: 'bi-file-text' },
+                  { lucide: 'Layers', bs: 'bi-layers' },
+                  { lucide: 'Building2', bs: 'bi-building' },
+                  { lucide: 'Zap', bs: 'bi-lightning' },
+                  { lucide: 'BookOpen', bs: 'bi-book' },
                 ].map(ic => (
-                  <div key={ic.name} className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-gray-50 transition-colors">
-                    <div className="text-gray-600">{ic.icon}</div>
-                    <span className="text-[9px] text-gray-400 font-mono text-center">{ic.name}</span>
+                  <div key={ic.lucide} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                    <code className="text-[10px] font-mono text-blue-600 w-28 shrink-0">Lucide: {ic.lucide}</code>
+                    <code className="text-[10px] font-mono text-green-600 w-28 shrink-0">BS: {ic.bs}</code>
+                    <span className="text-[10px] text-gray-400">{'<i class="bi bi-' + ic.bs.replace('bi-', '') + '"></i>'}</span>
                   </div>
                 ))}
               </div>
+              <CodeBlock>{`<!-- Para usar Bootstrap Icons, agregar en el <head>: -->
+<link rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+<!-- Uso: -->
+<i class="bi bi-people"></i>
+<i class="bi bi-person-plus me-2"></i>
+<i class="bi bi-check-circle text-success"></i>`}</CodeBlock>
             </div>
           </section>
 
