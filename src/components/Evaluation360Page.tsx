@@ -699,41 +699,54 @@ function Eval360AdminView() {
   );
 
   const selectedEmployee = selectedId ? EMPLOYEES.find(e => e.id === selectedId) ?? null : null;
-  const totalAssigned = EMPLOYEES.filter(e => eval360Assignments.some(a => a.targetEmployeeId === e.id)).length;
   const totalCompleted = EMPLOYEES.filter(e => {
     const a = eval360Assignments.filter(x => x.targetEmployeeId === e.id);
     return a.length > 0 && a.every(x => x.completedAt);
   }).length;
-  const totalWithData = EMPLOYEES.filter(e => (threeSixty[e.id]?.peers?.length ?? 0) > 0 || threeSixty[e.id]?.self).length;
+  const totalPending = EMPLOYEES.filter(e => {
+    const a = eval360Assignments.filter(x => x.targetEmployeeId === e.id);
+    return a.length > 0 && !a.every(x => x.completedAt);
+  }).length;
+  const empScores = EMPLOYEES.map(e => computeOverallScore(e.id, threeSixty)).filter((s): s is number => s !== null);
+  const overallAvg = empScores.length > 0 ? empScores.reduce((a, b) => a + b, 0) / empScores.length : null;
 
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-            <Users size={16} className="text-blue-600" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Con evaluadores</p>
-            <p className="text-xl font-black text-gray-900">{totalAssigned}</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
-            <CheckCircle2 size={16} className="text-green-600" />
+        <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-4 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+            <CheckCircle2 size={16} className="text-emerald-600" />
           </div>
           <div>
             <p className="text-xs text-gray-500">Completos</p>
             <p className="text-xl font-black text-gray-900">{totalCompleted}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">evaluaciones finalizadas</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-4 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+            <AlertCircle size={16} className="text-amber-500" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Pendientes / Sin finalizar</p>
+            <p className="text-xl font-black text-gray-900">{totalPending}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">en proceso o sin responder</p>
           </div>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
-            <AlertCircle size={16} className="text-amber-600" />
+          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+            <BarChart2 size={16} className="text-blue-600" />
           </div>
           <div>
-            <p className="text-xs text-gray-500">Con respuestas</p>
-            <p className="text-xl font-black text-gray-900">{totalWithData}</p>
+            <p className="text-xs text-gray-500">Promedio general</p>
+            <p className={`text-xl font-black ${overallAvg ? getScoreColor(overallAvg) : 'text-gray-300'}`}>
+              {overallAvg ? overallAvg.toFixed(2) : '—'}
+            </p>
+            {overallAvg && (
+              <span className={`mt-0.5 inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${getScoreBg(overallAvg)}`}>
+                {getClassificationLabel(overallAvg)}
+              </span>
+            )}
           </div>
         </div>
       </div>
