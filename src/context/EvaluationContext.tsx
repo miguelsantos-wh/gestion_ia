@@ -8,24 +8,25 @@ import {
   type ReactNode,
 } from 'react';
 import type { PerformanceLevel, PotentialLevel } from '../types';
-import type { Employee360Data, Eval360Assignment, EvaluationStorage, PeerSubmission, PerceptionPlacement, PercepcionAssignment } from '../types/evaluation';
+import type { Employee360Data, Eval360Assignment, Evaluation360Session, EvaluationStorage, PeerSubmission, PerceptionPlacement, PercepcionAssignment } from '../types/evaluation';
 import { STORAGE_KEY } from '../types/evaluation';
 import { EMPLOYEES } from '../data/mockData';
 
 function loadStorage(): EvaluationStorage {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [] };
+    if (!raw) return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [] };
     const p = JSON.parse(raw) as EvaluationStorage;
     return {
       threeSixty: p.threeSixty ?? {},
       percepcion: p.percepcion ?? {},
       autoPercepcion: p.autoPercepcion ?? {},
       assignments: p.assignments ?? [],
-      eval360Assignments: p.eval360Assignments ?? [],
+      eval360Assignments: (p.eval360Assignments ?? []).map(a => ({ ...a, sessionId: a.sessionId ?? 'legacy' })),
+      eval360Sessions: p.eval360Sessions ?? [],
     };
   } catch {
-    return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [] };
+    return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [] };
   }
 }
 
@@ -35,6 +36,7 @@ interface EvaluationContextValue {
   autoPercepcion: Record<string, PerceptionPlacement>;
   assignments: PercepcionAssignment[];
   eval360Assignments: Eval360Assignment[];
+  eval360Sessions: Evaluation360Session[];
   saveSelfEvaluation: (employeeId: string, scores: number[]) => void;
   savePeerEvaluation: (employeeId: string, evaluatorName: string, scores: number[]) => void;
   savePerceptionPlacement: (
@@ -51,11 +53,14 @@ interface EvaluationContextValue {
   ) => void;
   saveAssignment: (evaluatorId: string, targetId: string) => void;
   markAssignmentComplete: (evaluatorId: string, targetId: string) => void;
+  createEval360Session: (session: Omit<Evaluation360Session, 'id' | 'createdAt'>) => string | null;
   saveEval360Assignment: (assignment: Omit<Eval360Assignment, 'id' | 'assignedAt'>) => string;
   completeEval360Assignment: (id: string, scores: number[]) => void;
   removeEval360Assignment: (id: string) => void;
+  removeEval360Session: (sessionId: string) => void;
   syncCompletedEvaluations: () => void;
   resetAll: () => void;
+  hasPeriodConflict: (targetEmployeeId: string, period: string, excludeSessionId?: string) => boolean;
 }
 
 const EvaluationContext = createContext<EvaluationContextValue | null>(null);
@@ -277,6 +282,52 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
     [persist]
   );
 
+  const hasPeriodConflict = useCallback(
+    (targetEmployeeId: string, period: string, excludeSessionId?: string): boolean => {
+      return store.eval360Sessions.some(
+        s => s.targetEmployeeId === targetEmployeeId && s.period === period && s.id !== excludeSessionId
+      );
+    },
+    [store.eval360Sessions]
+  );
+
+  const createEval360Session = useCallback(
+    (session: Omit<Evaluation360Session, 'id' | 'createdAt'>): string | null => {
+      const conflict = store.eval360Sessions.some(
+        s => s.targetEmployeeId === session.targetEmployeeId && s.period === session.period
+      );
+      if (conflict) return null;
+
+      const id = `s360-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const full: Evaluation360Session = { ...session, id, createdAt: new Date().toISOString() };
+      setStore((prev) => {
+        const next: EvaluationStorage = {
+          ...prev,
+          eval360Sessions: [...(prev.eval360Sessions ?? []), full],
+        };
+        persist(next);
+        return next;
+      });
+      return id;
+    },
+    [persist, store.eval360Sessions]
+  );
+
+  const removeEval360Session = useCallback(
+    (sessionId: string) => {
+      setStore((prev) => {
+        const next: EvaluationStorage = {
+          ...prev,
+          eval360Sessions: (prev.eval360Sessions ?? []).filter(s => s.id !== sessionId),
+          eval360Assignments: (prev.eval360Assignments ?? []).filter(a => a.sessionId !== sessionId),
+        };
+        persist(next);
+        return next;
+      });
+    },
+    [persist]
+  );
+
   const saveEval360Assignment = useCallback(
     (assignment: Omit<Eval360Assignment, 'id' | 'assignedAt'>): string => {
       const id = `e360-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -337,7 +388,7 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
   }, [persist, triggerSync]);
 
   const resetAll = useCallback(() => {
-    const empty: EvaluationStorage = { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [] };
+    const empty: EvaluationStorage = { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [] };
     persist(empty);
     setStore(empty);
   }, [persist]);
@@ -349,17 +400,21 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
       autoPercepcion: store.autoPercepcion,
       assignments: store.assignments,
       eval360Assignments: store.eval360Assignments ?? [],
+      eval360Sessions: store.eval360Sessions ?? [],
       saveSelfEvaluation,
       savePeerEvaluation,
       savePerceptionPlacement,
       saveAutoPercepcion,
       saveAssignment,
       markAssignmentComplete,
+      createEval360Session,
       saveEval360Assignment,
       completeEval360Assignment,
       removeEval360Assignment,
+      removeEval360Session,
       syncCompletedEvaluations,
       resetAll,
+      hasPeriodConflict,
     }),
     [
       store.threeSixty,
@@ -367,17 +422,21 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
       store.autoPercepcion,
       store.assignments,
       store.eval360Assignments,
+      store.eval360Sessions,
       saveSelfEvaluation,
       savePeerEvaluation,
       savePerceptionPlacement,
       saveAutoPercepcion,
       saveAssignment,
       markAssignmentComplete,
+      createEval360Session,
       saveEval360Assignment,
       completeEval360Assignment,
       removeEval360Assignment,
+      removeEval360Session,
       syncCompletedEvaluations,
       resetAll,
+      hasPeriodConflict,
     ]
   );
 
