@@ -965,26 +965,38 @@ function Eval360Tab({ emp }: { emp: EmployeeProfile }) {
     { name: 'Colaborador', role: 'Subordinado', score: null, completed: false },
   ];
 
+  const completedCount = evaluators.filter(e => e.completed).length;
+  const pendingCount = evaluators.length - completedCount;
+
   return (
     <div className="space-y-6">
       {/* Resumen */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50">
+          <div className="flex items-start justify-between mb-2">
+            <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Completos</p>
+            <CheckCircle2 size={14} className="text-emerald-500" />
+          </div>
+          <p className="text-3xl font-black text-emerald-700">{completedCount}</p>
+          <p className="text-xs text-emerald-600 mt-1.5">evaluadores completaron</p>
+        </div>
+        <div className="p-4 rounded-xl border border-amber-100 bg-amber-50">
+          <div className="flex items-start justify-between mb-2">
+            <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide">Pendientes</p>
+            <Circle size={14} className="text-amber-400" />
+          </div>
+          <p className="text-3xl font-black text-amber-700">{pendingCount}</p>
+          <p className="text-xs text-amber-600 mt-1.5">sin finalizar</p>
+        </div>
         <div className={`p-4 rounded-xl border ${cls.border} ${cls.bg}`}>
-          <p className={`text-xs font-medium mb-2 ${cls.text}`}>Resultado global</p>
+          <div className="flex items-start justify-between mb-2">
+            <p className={`text-xs font-semibold uppercase tracking-wide ${cls.text}`}>Promedio general</p>
+            <TrendingUp size={14} className={cls.text} style={{ opacity: 0.7 }} />
+          </div>
           <p className={`text-3xl font-black ${cls.text}`}>{avgScore.toFixed(1)}<span className="text-sm font-normal opacity-60">/5</span></p>
           <span className={`mt-1.5 inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${cls.border} ${cls.bg} ${cls.text}`}>
             {cls.label}
           </span>
-        </div>
-        <div className="p-4 rounded-xl border border-gray-100 bg-white">
-          <p className="text-xs text-gray-400 mb-2">Evaluadores</p>
-          <p className="text-3xl font-black text-gray-900">{evaluators.filter(e => e.completed).length}<span className="text-sm font-normal text-gray-400">/{evaluators.length}</span></p>
-          <p className="text-xs text-gray-500 mt-1">completaron la evaluación</p>
-        </div>
-        <div className="p-4 rounded-xl border border-gray-100 bg-white">
-          <p className="text-xs text-gray-400 mb-2">Ciclo</p>
-          <p className="text-sm font-bold text-gray-900">Julio–Dic 2024</p>
-          <p className="text-xs text-gray-400 mt-1">Última actualización: {mockEmp.lastReview}</p>
         </div>
       </div>
 
