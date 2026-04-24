@@ -11,20 +11,84 @@ import type { PerformanceLevel, PotentialLevel } from '../types';
 import type { Employee360Data, Eval360Assignment, Evaluation360Session, EvaluationStorage, PeerSubmission, PerceptionPlacement, PercepcionAssignment } from '../types/evaluation';
 import { STORAGE_KEY } from '../types/evaluation';
 import { EMPLOYEES } from '../data/mockData';
+import { DEFAULT_360_TEMPLATE_ID } from '../data/evaluation360Template';
+
+function migrateLegacyAssignments(
+  assignments: Eval360Assignment[],
+  existingSessions: Evaluation360Session[]
+): { assignments: Eval360Assignment[]; sessions: Evaluation360Session[] } {
+  const legacyAssignments = assignments.filter(a => a.sessionId === 'legacy');
+  if (legacyAssignments.length === 0) return { assignments, sessions: existingSessions };
+
+  const newSessions: Evaluation360Session[] = [...existingSessions];
+  const updatedAssignments: Eval360Assignment[] = assignments.filter(a => a.sessionId !== 'legacy');
+
+  // Group legacy assignments by targetEmployeeId
+  const byEmployee = legacyAssignments.reduce<Record<string, Eval360Assignment[]>>((acc, a) => {
+    if (!acc[a.targetEmployeeId]) acc[a.targetEmployeeId] = [];
+    acc[a.targetEmployeeId].push(a);
+    return acc;
+  }, {});
+
+  for (const [employeeId, empAssignments] of Object.entries(byEmployee)) {
+    // Check if a legacy session already exists for this employee
+    const existingLegacySession = existingSessions.find(
+      s => s.targetEmployeeId === employeeId && s.period === 'Q4-2024'
+    );
+
+    let sessionId: string;
+    if (existingLegacySession) {
+      sessionId = existingLegacySession.id;
+    } else {
+      const employee = EMPLOYEES.find(e => e.id === employeeId);
+      const name = employee ? `Evaluación 360 — ${employee.name}` : 'Evaluación 360';
+      sessionId = `s360-legacy-${employeeId}`;
+      const session: Evaluation360Session = {
+        id: sessionId,
+        targetEmployeeId: employeeId,
+        name,
+        description: 'Evaluación migrada automáticamente desde registros anteriores.',
+        period: 'Q4-2024',
+        dueDate: '',
+        templateId: DEFAULT_360_TEMPLATE_ID,
+        createdAt: empAssignments[0]?.assignedAt ?? new Date().toISOString(),
+      };
+      newSessions.push(session);
+    }
+
+    empAssignments.forEach(a => {
+      updatedAssignments.push({ ...a, sessionId });
+    });
+  }
+
+  return { assignments: updatedAssignments, sessions: newSessions };
+}
 
 function loadStorage(): EvaluationStorage {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [] };
     const p = JSON.parse(raw) as EvaluationStorage;
-    return {
+
+    const rawAssignments = (p.eval360Assignments ?? []).map(a => ({ ...a, sessionId: a.sessionId ?? 'legacy' }));
+    const rawSessions = p.eval360Sessions ?? [];
+    const { assignments: migratedAssignments, sessions: migratedSessions } = migrateLegacyAssignments(rawAssignments, rawSessions);
+
+    const storage: EvaluationStorage = {
       threeSixty: p.threeSixty ?? {},
       percepcion: p.percepcion ?? {},
       autoPercepcion: p.autoPercepcion ?? {},
       assignments: p.assignments ?? [],
-      eval360Assignments: (p.eval360Assignments ?? []).map(a => ({ ...a, sessionId: a.sessionId ?? 'legacy' })),
-      eval360Sessions: p.eval360Sessions ?? [],
+      eval360Assignments: migratedAssignments,
+      eval360Sessions: migratedSessions,
     };
+
+    // Persist the migration immediately so it's not re-run on every load
+    if (migratedSessions.length > rawSessions.length || migratedAssignments.some((a, i) => a.sessionId !== rawAssignments[i]?.sessionId)) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(storage));
+    }
+
+    return storage;
   } catch {
     return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [] };
   }
