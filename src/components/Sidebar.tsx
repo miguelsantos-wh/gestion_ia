@@ -1,7 +1,7 @@
-import { BarChart3, UserCheck, ClipboardList, Target, ChevronRight, Menu, X, LayoutList, Users } from 'lucide-react';
+import { BarChart3, UserCheck, ClipboardList, Target, ChevronRight, Menu, X, LayoutList, Users, BookOpen } from 'lucide-react';
 import { useState } from 'react';
 
-export type SidebarView = 'dashboard' | 'empleadoA' | 'eval360' | 'aciertos' | 'formulario' | 'empleados';
+export type SidebarView = 'dashboard' | 'empleadoA' | 'eval360' | 'aciertos' | 'formulario' | 'empleados' | 'designsystem';
 
 interface SidebarProps {
   activeView: SidebarView;
@@ -15,6 +15,7 @@ const MENU_ITEMS: { id: SidebarView; label: string; icon: React.ReactNode; secti
   { id: 'eval360', label: 'Evaluación 360', icon: <ClipboardList size={18} />, section: 'evaluaciones' },
   { id: 'aciertos', label: 'Aciertos y Desaciertos', icon: <Target size={18} />, section: 'evaluaciones' },
   { id: 'formulario', label: 'Guía de Formularios', icon: <LayoutList size={18} />, section: 'utilidades' },
+  { id: 'designsystem', label: 'Design System', icon: <BookOpen size={18} />, section: 'utilidades' },
 ];
 
 const SECTIONS = {
