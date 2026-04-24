@@ -12,6 +12,10 @@ import type { Employee } from '../types';
 import Evaluation360Results from './Evaluation360Results';
 import PendingEvaluations360 from './PendingEvaluations360';
 import Assign360Modal from './Assign360Modal';
+import Eval360SessionStatusView from './Eval360SessionStatusView';
+import Eval360SessionResultsView from './Eval360SessionResultsView';
+import type { Evaluation360Session } from '../types/evaluation';
+import { EVAL_360_PERIODS } from '../types/evaluation';
 
 const COMPETENCY_NAMES = [
   'Liderazgo', 'Trabajo en equipo', 'Resolución de problemas',
@@ -332,132 +336,6 @@ function ResumenTab({ employee }: { employee: Employee }) {
   );
 }
 
-type DetailTab = 'resumen' | 'asignar' | 'seguimiento' | 'resultados';
-
-function EmployeeDetailPanel({ employee, onClose, onAssign }: { employee: Employee; onClose: () => void; onAssign?: () => void }) {
-  const { eval360Assignments, threeSixty } = useEvaluationStore();
-  const [activeTab, setActiveTab] = useState<DetailTab>('resumen');
-
-  const assignments = eval360Assignments.filter(a => a.targetEmployeeId === employee.id);
-  const completed = assignments.filter(a => a.completedAt).length;
-  const pending = assignments.filter(a => !a.completedAt).length;
-
-  const TABS: { id: DetailTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'resumen', label: 'Resumen', icon: <BarChart3 size={13} /> },
-    { id: 'asignar', label: 'Asignar', icon: <UserPlus size={13} /> },
-    { id: 'seguimiento', label: 'Seguimiento', icon: <Clock size={13} /> },
-    { id: 'resultados', label: 'Resultados', icon: <Eye size={13} /> },
-  ];
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden flex flex-col h-full">
-      <div className="p-5 bg-gradient-to-br from-slate-50 to-gray-100 shrink-0">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-slate-200 flex items-center justify-center text-base font-bold text-slate-700 shrink-0">
-              {employee.avatar}
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-gray-900">{employee.name}</h3>
-              <p className="text-xs text-gray-600">{employee.position}</p>
-              <p className="text-xs text-gray-400">{employee.department}</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="w-7 h-7 rounded-full bg-white/70 hover:bg-white flex items-center justify-center text-gray-500">
-            <X size={14} />
-          </button>
-        </div>
-      </div>
-
-      <div className="flex gap-1 p-2 bg-gray-50 border-b border-gray-100 shrink-0">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              activeTab === tab.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {tab.icon}
-            <span className="hidden sm:inline">{tab.label}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {activeTab === 'resumen' && (
-          <>
-            <ResumenTab employee={employee} />
-            <button
-              type="button"
-              onClick={() => setActiveTab('asignar')}
-              className="w-full py-2.5 rounded-xl bg-slate-800 text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-slate-700 transition-colors"
-            >
-              <UserPlus size={15} />
-              Asignar evaluadores
-            </button>
-          </>
-        )}
-
-
-        {activeTab === 'asignar' && (
-          <div className="space-y-3">
-            <p className="text-xs text-gray-600 leading-relaxed">
-              Asigna hasta 5 evaluadores: su líder, un par (mismo puesto), un colaborador (depende del evaluado), un cliente y la autoevaluación.
-            </p>
-            <div className="grid grid-cols-1 gap-2">
-              {([
-                { role: 'self' as Eval360Role, label: 'Autoevaluación', icon: <User size={14} />, color: '#2563eb', hint: 'El propio colaborador' },
-                { role: 'leader' as Eval360Role, label: 'Líder', icon: <Briefcase size={14} />, color: '#0d9488', hint: 'Su líder directo' },
-                { role: 'peer' as Eval360Role, label: 'Par', icon: <Equal size={14} />, color: '#7c3aed', hint: 'Mismo nivel/puesto' },
-                { role: 'collaborator' as Eval360Role, label: 'Colaborador', icon: <UserCheck size={14} />, color: '#d97706', hint: 'Depende del evaluado' },
-                { role: 'client' as Eval360Role, label: 'Cliente', icon: <Globe size={14} />, color: '#dc2626', hint: 'Cliente interno/externo' },
-                { role: 'anonymous' as Eval360Role, label: 'Anónimo', icon: <Users size={14} />, color: '#64748b', hint: 'Enlace anónimo abierto' },
-              ]).map(({ role, label, icon, color, hint }) => {
-                const roleAssignments = assignments.filter(a => a.role === role);
-                const done = roleAssignments.filter(a => a.completedAt).length;
-                return (
-                  <div key={role} className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}15` }}>
-                      <span style={{ color }}>{icon}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-gray-800">{label}</p>
-                      <p className="text-[10px] text-gray-400">{hint}</p>
-                    </div>
-                    {roleAssignments.length > 0 && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: `${color}15`, color }}>
-                        {done}/{roleAssignments.length}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <button
-              type="button"
-              onClick={onAssign}
-              className="w-full py-3 rounded-xl bg-slate-800 text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-slate-700 transition-colors"
-            >
-              <UserPlus size={16} />
-              Asignar nuevo evaluador
-            </button>
-          </div>
-        )}
-
-        {activeTab === 'seguimiento' && (
-          <PendingEvaluations360 employeeId={employee.id} />
-        )}
-
-        {activeTab === 'resultados' && (
-          <Evaluation360Results employeeId={employee.id} />
-        )}
-      </div>
-
-    </div>
-  );
-}
 
 function GlobalResults360() {
   const { threeSixty, eval360Assignments } = useEvaluationStore();
@@ -670,6 +548,183 @@ function GlobalResults360() {
           </table>
         </div>
       </div>
+    </div>
+  );
+}
+
+type SessionPanelView = { kind: 'list' } | { kind: 'status'; session: Evaluation360Session } | { kind: 'results'; session: Evaluation360Session };
+
+function EmployeeSessionsPanel({
+  employee,
+  onClose,
+  onAssign,
+}: {
+  employee: Employee;
+  onClose: () => void;
+  onAssign: () => void;
+}) {
+  const { eval360Sessions, eval360Assignments, threeSixty } = useEvaluationStore();
+  const [view, setView] = useState<SessionPanelView>({ kind: 'list' });
+
+  const sessions = eval360Sessions.filter(s => s.targetEmployeeId === employee.id);
+
+  if (view.kind === 'status') {
+    return (
+      <Eval360SessionStatusView
+        session={view.session}
+        onBack={() => setView({ kind: 'list' })}
+      />
+    );
+  }
+
+  if (view.kind === 'results') {
+    return (
+      <Eval360SessionResultsView
+        session={view.session}
+        onBack={() => setView({ kind: 'list' })}
+      />
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/60">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-slate-200 flex items-center justify-center text-sm font-bold text-slate-700 shrink-0">
+            {employee.avatar}
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">{employee.name}</h3>
+            <p className="text-xs text-gray-500">{employee.position} · {employee.department}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onAssign}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold hover:bg-slate-700 transition-colors"
+          >
+            <UserPlus size={13} />
+            Nueva evaluación
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-7 h-7 rounded-full bg-white border border-gray-200 hover:bg-gray-50 flex items-center justify-center text-gray-500"
+          >
+            <X size={13} />
+          </button>
+        </div>
+      </div>
+
+      {/* Sessions list */}
+      {sessions.length === 0 ? (
+        <div className="py-12 text-center">
+          <BarChart2 size={28} className="text-gray-200 mx-auto mb-3" />
+          <p className="text-sm font-semibold text-gray-400">Sin evaluaciones asignadas</p>
+          <p className="text-xs text-gray-400 mt-1">Crea una evaluación 360 para este colaborador.</p>
+          <button
+            type="button"
+            onClick={onAssign}
+            className="mt-4 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 text-white text-sm font-semibold hover:bg-slate-700 transition-colors mx-auto"
+          >
+            <UserPlus size={14} />
+            Asignar evaluación
+          </button>
+        </div>
+      ) : (
+        <div className="divide-y divide-gray-50">
+          {sessions.map(session => {
+            const sessionAssignments = eval360Assignments.filter(a => a.sessionId === session.id);
+            const completedCount = sessionAssignments.filter(a => a.completedAt).length;
+            const totalCount = sessionAssignments.length;
+            const pct = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+            const data = threeSixty[session.targetEmployeeId];
+            let overallScore: number | null = null;
+            if (data) {
+              const allSubs: number[][] = [];
+              if (data.self) allSubs.push(data.self);
+              (data.peers ?? []).forEach(p => { if (p.scores.length > 0) allSubs.push(p.scores); });
+              if (allSubs.length > 0) {
+                const total = allSubs.reduce((sum, s) => sum + s.reduce((a, b) => a + b, 0) / s.length, 0);
+                overallScore = total / allSubs.length;
+              }
+            }
+
+            const due = session.dueDate ? new Date(session.dueDate) : null;
+            const now = new Date();
+            const isOverdue = due && due < now && pct < 100;
+            const periodLabel = EVAL_360_PERIODS.find(p => p.value === session.period)?.label ?? session.period;
+            const isComplete = totalCount > 0 && completedCount === totalCount;
+
+            return (
+              <div key={session.id} className="px-5 py-4 hover:bg-gray-50/50 transition-colors">
+                <div className="flex items-start gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="text-sm font-semibold text-gray-900 truncate">{session.name}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${isComplete ? 'bg-emerald-100 text-emerald-700' : pct > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {isComplete ? 'Completado' : pct > 0 ? 'En progreso' : 'Sin respuestas'}
+                      </span>
+                      {isOverdue && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600 shrink-0">Vencido</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap mb-2.5">
+                      <span className="text-xs text-gray-500">{periodLabel}</span>
+                      <span className="text-gray-300 text-xs">·</span>
+                      <span className="text-xs text-gray-500">{completedCount}/{totalCount} respondieron</span>
+                      {due && (
+                        <>
+                          <span className="text-gray-300 text-xs">·</span>
+                          <span className={`text-xs ${isOverdue ? 'text-red-500 font-semibold' : 'text-gray-500'}`}>
+                            Límite: {due.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        </>
+                      )}
+                      {overallScore !== null && (
+                        <>
+                          <span className="text-gray-300 text-xs">·</span>
+                          <span className={`text-xs font-black ${getScoreColor(overallScore)}`}>{overallScore.toFixed(2)}</span>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${getScoreBg(overallScore)}`}>{getClassificationLabel(overallScore)}</span>
+                        </>
+                      )}
+                    </div>
+                    {totalCount > 0 && (
+                      <div className="w-full bg-gray-100 rounded-full h-1.5 mb-0.5">
+                        <div
+                          className="h-1.5 rounded-full transition-all duration-500"
+                          style={{ width: `${pct}%`, backgroundColor: isComplete ? '#059669' : '#2563eb' }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setView({ kind: 'status', session })}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                    >
+                      <Eye size={13} />
+                      Ver Estado
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setView({ kind: 'results', session })}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                    >
+                      <BarChart3 size={13} />
+                      Ver Resultados
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -913,13 +968,11 @@ function Eval360AdminView() {
                       {isSelected && selectedEmployee && (
                         <tr key={`${emp.id}-panel`} className="bg-slate-50/60">
                           <td colSpan={7} className="px-5 py-5">
-                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                              <EmployeeDetailPanel
-                                employee={selectedEmployee}
-                                onClose={() => setSelectedId(null)}
-                                onAssign={() => setShowAssignModalFor(selectedEmployee)}
-                              />
-                            </div>
+                            <EmployeeSessionsPanel
+                              employee={selectedEmployee}
+                              onClose={() => setSelectedId(null)}
+                              onAssign={() => setShowAssignModalFor(selectedEmployee)}
+                            />
                           </td>
                         </tr>
                       )}
