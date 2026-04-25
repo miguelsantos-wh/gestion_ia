@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import {
   X, Users, User, Briefcase, Equal, UserCheck, Globe, Copy, Check,
   ChevronRight, Calendar, FileText, AlertTriangle, Info, Plus, Trash2,
-  ClipboardList, ChevronLeft, CheckCircle2
+  ClipboardList, ChevronLeft, CheckCircle2, HelpCircle, Search
 } from 'lucide-react';
 import { EMPLOYEES } from '../data/mockData';
 import { useEvaluationStore } from '../context/EvaluationContext';
@@ -11,54 +11,126 @@ import type { Eval360Role, Eval360Period } from '../types/evaluation';
 import { EVAL_360_PERIODS } from '../types/evaluation';
 import type { Employee } from '../types';
 
+/* ─── Role configs ─────────────────────────────────────────────────────────── */
+
 interface RoleConfig {
   role: Eval360Role;
   label: string;
   shortLabel: string;
   description: string;
+  tooltip: string;
   icon: React.ReactNode;
   color: string;
-  allowAnonymous: boolean;
+  bgLight: string;
+  borderColor: string;
+  allowExternal: boolean;
 }
 
 const ROLE_CONFIGS: RoleConfig[] = [
-  { role: 'self', label: 'Autoevaluación', shortLabel: 'Auto', description: 'El propio colaborador se evalúa a sí mismo.', icon: <User size={15} />, color: '#2563eb', allowAnonymous: false },
-  { role: 'leader', label: 'Evaluación por Líder', shortLabel: 'Líder', description: 'Su líder directo lo evalúa.', icon: <Briefcase size={15} />, color: '#0d9488', allowAnonymous: false },
-  { role: 'peer', label: 'Evaluación por Par', shortLabel: 'Par', description: 'Un compañero con el mismo puesto o nivel.', icon: <Equal size={15} />, color: '#7c3aed', allowAnonymous: true },
-  { role: 'collaborator', label: 'Evaluación por Colaborador', shortLabel: 'Colaborador', description: 'Alguien que depende del evaluado.', icon: <UserCheck size={15} />, color: '#d97706', allowAnonymous: true },
-  { role: 'client', label: 'Evaluación por Cliente', shortLabel: 'Cliente', description: 'Un cliente interno o externo.', icon: <Globe size={15} />, color: '#dc2626', allowAnonymous: true },
-  { role: 'anonymous', label: 'Evaluación Anónima', shortLabel: 'Anónimo', description: 'Link anónimo para cualquier evaluador.', icon: <Users size={15} />, color: '#64748b', allowAnonymous: true },
+  {
+    role: 'leader',
+    label: 'Gerente / Supervisor',
+    shortLabel: 'Líder',
+    description: 'Su líder directo o supervisor inmediato.',
+    tooltip: 'La persona que supervisa directamente al evaluado.',
+    icon: <Briefcase size={16} />,
+    color: '#0d9488',
+    bgLight: '#f0fdfa',
+    borderColor: '#99f6e4',
+    allowExternal: false,
+  },
+  {
+    role: 'peer',
+    label: 'Compañero / Igual',
+    shortLabel: 'Par',
+    description: 'Alguien del mismo puesto o mismo nivel.',
+    tooltip: 'Alguien del mismo puesto o mismo nivel jerárquico que el evaluado.',
+    icon: <Equal size={16} />,
+    color: '#2563eb',
+    bgLight: '#eff6ff',
+    borderColor: '#bfdbfe',
+    allowExternal: false,
+  },
+  {
+    role: 'collaborator',
+    label: 'Su Colaborador',
+    shortLabel: 'Colaborador',
+    description: 'Alguien que depende directamente del evaluado.',
+    tooltip: 'Persona que reporta o depende directamente del evaluado.',
+    icon: <UserCheck size={16} />,
+    color: '#d97706',
+    bgLight: '#fffbeb',
+    borderColor: '#fde68a',
+    allowExternal: false,
+  },
+  {
+    role: 'client',
+    label: 'Su Cliente',
+    shortLabel: 'Cliente',
+    description: 'Alguien externo; si no tiene clientes, otro compañero.',
+    tooltip: 'Un cliente externo con quien tenga trato. Si no aplica, puede ser otro compañero de la empresa.',
+    icon: <Globe size={16} />,
+    color: '#dc2626',
+    bgLight: '#fef2f2',
+    borderColor: '#fecaca',
+    allowExternal: true,
+  },
+  {
+    role: 'self',
+    label: 'Autoevaluación',
+    shortLabel: 'Auto',
+    description: 'El propio colaborador se evalúa a sí mismo.',
+    tooltip: 'El evaluado responde sobre sí mismo.',
+    icon: <User size={16} />,
+    color: '#7c3aed',
+    bgLight: '#faf5ff',
+    borderColor: '#ddd6fe',
+    allowExternal: false,
+  },
 ];
+
+/* ─── Helpers ───────────────────────────────────────────────────────────────── */
+
+const LEADER_TITLES = ['Gerente', 'Director', 'Directora', 'Jefe', 'Coordinador'];
+
+function isLeader(e: Employee) {
+  return LEADER_TITLES.some(t => e.position.includes(t));
+}
+
+function inferLeader(target: Employee): Employee | null {
+  // First: someone with a leader title in same department
+  const deptLeader = EMPLOYEES.find(
+    e => e.id !== target.id && e.department === target.department && isLeader(e)
+  );
+  if (deptLeader) return deptLeader;
+  // Fallback: any leader in any department
+  return EMPLOYEES.find(e => e.id !== target.id && isLeader(e)) ?? null;
+}
+
+function inferPeer(target: Employee, exclude: string[]): Employee | null {
+  // Same dept, not a leader, not already excluded
+  return EMPLOYEES.find(
+    e => e.id !== target.id && !exclude.includes(e.id) && e.department === target.department && !isLeader(e)
+  ) ?? null;
+}
+
+function inferCollaborator(target: Employee, exclude: string[]): Employee | null {
+  // Someone in same dept who is NOT a leader and is "below" (lower seniority/non-manager) – just another non-leader colleague
+  return EMPLOYEES.find(
+    e => e.id !== target.id && !exclude.includes(e.id) && e.department === target.department && !isLeader(e)
+  ) ?? null;
+}
+
+export interface SlotEvaluator {
+  roleIndex: number; // 0-4 maps to ROLE_CONFIGS
+  employeeId: string | null;   // internal employee, null if external
+  externalName: string;         // used only when no internal employee selected
+  isExternal: boolean;
+}
 
 function buildHashLink(path: string, params: Record<string, string>): string {
   const q = new URLSearchParams(params).toString();
   return `${window.location.origin}${window.location.pathname}#${path}?${q}`;
-}
-
-/** Infer the leader for an employee based on department: find a Gerente/Director in same dept */
-function inferLeader(targetEmployee: Employee): Employee | null {
-  const leaderTitles = ['Gerente', 'Director', 'Directora', 'Jefe', 'Coordinador'];
-  return EMPLOYEES.find(e =>
-    e.id !== targetEmployee.id &&
-    e.department === targetEmployee.department &&
-    leaderTitles.some(t => e.position.includes(t))
-  ) ?? null;
-}
-
-/** Pre-suggested evaluators: leader from same dept, peers from same dept */
-function getSuggestedEvaluators(target: Employee) {
-  const leader = inferLeader(target);
-  const peers = EMPLOYEES.filter(
-    e => e.id !== target.id && e.department === target.department && e.id !== leader?.id
-  ).slice(0, 2);
-  return { leader, peers };
-}
-
-interface PendingEvaluator {
-  role: Eval360Role;
-  evaluatorName: string;
-  evaluatorEmployeeId?: string;
-  isAnonymous: boolean;
 }
 
 interface Assign360ModalProps {
@@ -68,13 +140,261 @@ interface Assign360ModalProps {
 
 type Step = 'config' | 'evaluators' | 'done';
 
+/* ─── Tooltip component ─────────────────────────────────────────────────────── */
+function Tooltip({ text }: { text: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative inline-flex">
+      <button
+        type="button"
+        className="text-gray-300 hover:text-gray-500 transition-colors"
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+      >
+        <HelpCircle size={13} />
+      </button>
+      {show && (
+        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 bg-gray-900 text-white text-[11px] leading-relaxed px-3 py-2 rounded-lg shadow-xl pointer-events-none">
+          {text}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Employee picker ───────────────────────────────────────────────────────── */
+function EmployeePicker({
+  value,
+  exclude,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  exclude: string[];
+  onChange: (id: string) => void;
+  placeholder: string;
+}) {
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+
+  const options = EMPLOYEES.filter(
+    e => !exclude.includes(e.id) && (
+      query === '' ||
+      e.name.toLowerCase().includes(query.toLowerCase()) ||
+      e.position.toLowerCase().includes(query.toLowerCase())
+    )
+  );
+
+  const selected = EMPLOYEES.find(e => e.id === value);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-xl text-sm hover:border-gray-300 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white"
+      >
+        {selected ? (
+          <>
+            <div className="w-6 h-6 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold flex items-center justify-center shrink-0">
+              {selected.avatar}
+            </div>
+            <span className="flex-1 text-left text-gray-800 font-medium text-xs truncate">{selected.name}</span>
+            <span className="text-[10px] text-gray-400 shrink-0 truncate max-w-[100px]">{selected.position}</span>
+          </>
+        ) : (
+          <span className="text-gray-400 text-xs flex-1 text-left">{placeholder}</span>
+        )}
+        <ChevronRight size={12} className="text-gray-300 shrink-0 rotate-90" />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+          <div className="p-2 border-b border-gray-100">
+            <div className="flex items-center gap-2 px-2 py-1.5 bg-gray-50 rounded-lg">
+              <Search size={12} className="text-gray-400 shrink-0" />
+              <input
+                autoFocus
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Buscar colaborador…"
+                className="flex-1 text-xs bg-transparent outline-none text-gray-700 placeholder:text-gray-400"
+              />
+            </div>
+          </div>
+          <div className="max-h-48 overflow-y-auto">
+            {value && (
+              <button
+                type="button"
+                onClick={() => { onChange(''); setOpen(false); setQuery(''); }}
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-xs text-gray-400 border-b border-gray-50"
+              >
+                <X size={11} /> Quitar selección
+              </button>
+            )}
+            {options.length === 0 ? (
+              <p className="text-center text-xs text-gray-400 py-4">Sin resultados</p>
+            ) : (
+              options.map(e => (
+                <button
+                  key={e.id}
+                  type="button"
+                  onClick={() => { onChange(e.id); setOpen(false); setQuery(''); }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-gray-50 transition-colors text-left ${value === e.id ? 'bg-blue-50' : ''}`}
+                >
+                  <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold flex items-center justify-center shrink-0">
+                    {e.avatar}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-gray-800 truncate">{e.name}</p>
+                    <p className="text-[10px] text-gray-400 truncate">{e.position} · {e.department}</p>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Slot card ──────────────────────────────────────────────────────────────── */
+function SlotCard({
+  roleIndex,
+  slot,
+  targetEmployee,
+  usedIds,
+  onChange,
+}: {
+  roleIndex: number;
+  slot: SlotEvaluator;
+  targetEmployee: Employee;
+  usedIds: string[];
+  onChange: (s: SlotEvaluator) => void;
+}) {
+  const rc = ROLE_CONFIGS[roleIndex];
+  const isSelf = rc.role === 'self';
+  const resolvedEmployee = slot.employeeId ? EMPLOYEES.find(e => e.id === slot.employeeId) : null;
+  const isFilled = isSelf || !!slot.employeeId || (slot.isExternal && slot.externalName.trim() !== '');
+
+  return (
+    <div
+      className="rounded-2xl border-2 transition-all overflow-hidden"
+      style={{
+        borderColor: isFilled ? rc.borderColor : '#e5e7eb',
+        background: isFilled ? rc.bgLight : '#fafafa',
+      }}
+    >
+      {/* Header */}
+      <div
+        className="flex items-center gap-3 px-4 py-3"
+        style={{ borderBottom: `1px solid ${isFilled ? rc.borderColor : '#f3f4f6'}` }}
+      >
+        <div
+          className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-white"
+          style={{ background: isFilled ? rc.color : '#d1d5db' }}
+        >
+          {rc.icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-bold text-gray-800">{rc.label}</span>
+            <Tooltip text={rc.tooltip} />
+          </div>
+          <p className="text-[10px] text-gray-400 leading-tight mt-0.5">{rc.description}</p>
+        </div>
+        {/* Filled indicator */}
+        <div className="shrink-0">
+          {isFilled ? (
+            <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: rc.color }}>
+              <Check size={10} className="text-white" />
+            </div>
+          ) : (
+            <div className="w-5 h-5 rounded-full border-2 border-dashed border-gray-300" />
+          )}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="px-4 py-3 space-y-2">
+        {isSelf ? (
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold flex items-center justify-center shrink-0">
+              {targetEmployee.avatar}
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-800">{targetEmployee.name}</p>
+              <p className="text-[10px] text-gray-400">{targetEmployee.position}</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Toggle external */}
+            {rc.allowExternal && (
+              <div className="flex items-center gap-2 mb-1">
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...slot, isExternal: false, externalName: '' })}
+                  className={`text-[10px] font-semibold px-2.5 py-1 rounded-full transition-all ${!slot.isExternal ? 'text-white' : 'text-gray-500 bg-gray-100'}`}
+                  style={!slot.isExternal ? { background: rc.color } : {}}
+                >
+                  Colaborador interno
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...slot, isExternal: true, employeeId: null })}
+                  className={`text-[10px] font-semibold px-2.5 py-1 rounded-full transition-all ${slot.isExternal ? 'text-white' : 'text-gray-500 bg-gray-100'}`}
+                  style={slot.isExternal ? { background: rc.color } : {}}
+                >
+                  Externo / nombre
+                </button>
+              </div>
+            )}
+
+            {/* Picker or name input */}
+            {slot.isExternal ? (
+              <input
+                type="text"
+                value={slot.externalName}
+                onChange={e => onChange({ ...slot, externalName: e.target.value })}
+                placeholder="Nombre del cliente o evaluador externo"
+                className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:border-blue-400 bg-white text-gray-800 placeholder:text-gray-400 transition-all"
+                style={{ '--tw-ring-color': `${rc.color}40` } as React.CSSProperties}
+              />
+            ) : (
+              <EmployeePicker
+                value={slot.employeeId ?? ''}
+                exclude={usedIds}
+                onChange={id => onChange({ ...slot, employeeId: id || null })}
+                placeholder={`Seleccionar ${rc.shortLabel.toLowerCase()}…`}
+              />
+            )}
+
+            {/* Resolved employee detail */}
+            {!slot.isExternal && resolvedEmployee && (
+              <div className="flex items-center gap-1.5 text-[10px] text-gray-500 pl-1">
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ background: rc.color }} />
+                {resolvedEmployee.department} · {resolvedEmployee.position}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main component ─────────────────────────────────────────────────────────── */
+
 export default function Assign360Modal({ targetEmployee, onClose }: Assign360ModalProps) {
   const { createEval360Session, saveEval360Assignment, eval360Assignments, hasPeriodConflict } = useEvaluationStore();
 
-  /* ── Step state ── */
   const [step, setStep] = useState<Step>('config');
 
-  /* ── Step 1: session config ── */
+  /* Step 1 */
   const [sessionName, setSessionName] = useState(`Evaluación 360 – ${targetEmployee.name}`);
   const [sessionDescription, setSessionDescription] = useState('');
   const [period, setPeriod] = useState<Eval360Period>('Q2-2026');
@@ -86,26 +406,53 @@ export default function Assign360Modal({ targetEmployee, onClose }: Assign360Mod
   const [templateId, setTemplateId] = useState(DEFAULT_360_TEMPLATE_ID);
   const [sessionId, setSessionId] = useState<string | null>(null);
 
-  /* ── Step 2: evaluators ── */
-  const [pendingEvaluators, setPendingEvaluators] = useState<PendingEvaluator[]>([]);
-  const [selectedRole, setSelectedRole] = useState<Eval360Role>('leader');
-  const [evaluatorName, setEvaluatorName] = useState('');
-  const [evaluatorEmployeeId, setEvaluatorEmployeeId] = useState('');
-  const [isAnonymous, setIsAnonymous] = useState(false);
+  /* Step 2: 5 fixed slots */
+  const initialSlots = useMemo<SlotEvaluator[]>(() => {
+    const leader = inferLeader(targetEmployee);
+    const usedAfterLeader = [targetEmployee.id, ...(leader ? [leader.id] : [])];
+    const peer = inferPeer(targetEmployee, usedAfterLeader);
+    const usedAfterPeer = [...usedAfterLeader, ...(peer ? [peer.id] : [])];
+    const collaborator = inferCollaborator(targetEmployee, usedAfterPeer);
+
+    return [
+      { roleIndex: 0, employeeId: leader?.id ?? null, externalName: '', isExternal: false },
+      { roleIndex: 1, employeeId: peer?.id ?? null, externalName: '', isExternal: false },
+      { roleIndex: 2, employeeId: collaborator?.id ?? null, externalName: '', isExternal: false },
+      { roleIndex: 3, employeeId: null, externalName: '', isExternal: false },
+      { roleIndex: 4, employeeId: targetEmployee.id, externalName: '', isExternal: false }, // self – always target
+    ];
+  }, [targetEmployee]);
+
+  const [slots, setSlots] = useState<SlotEvaluator[]>(initialSlots);
+
+  /* Done step */
   const [generatedLinks, setGeneratedLinks] = useState<Record<string, string>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  const suggestions = useMemo(() => getSuggestedEvaluators(targetEmployee), [targetEmployee]);
 
   const periodConflict = useMemo(
     () => hasPeriodConflict(targetEmployee.id, period),
     [hasPeriodConflict, targetEmployee.id, period]
   );
 
-  const roleConfig = ROLE_CONFIGS.find(r => r.role === selectedRole)!;
-  const otherEmployees = EMPLOYEES.filter(e => e.id !== targetEmployee.id);
+  /* IDs already used (to exclude from pickers) */
+  const usedIds = useMemo(() => {
+    const ids: string[] = [targetEmployee.id];
+    slots.forEach(s => { if (s.employeeId) ids.push(s.employeeId); });
+    return ids;
+  }, [slots, targetEmployee.id]);
 
-  /* ── Step 1 submit ── */
+  const updateSlot = (idx: number, updated: SlotEvaluator) => {
+    setSlots(prev => prev.map((s, i) => i === idx ? updated : s));
+  };
+
+  /* Count filled */
+  const filledCount = slots.filter((s, i) => {
+    const rc = ROLE_CONFIGS[i];
+    if (rc.role === 'self') return true;
+    return !!s.employeeId || (s.isExternal && s.externalName.trim() !== '');
+  }).length;
+
+  /* Step 1 submit */
   const handleCreateSession = () => {
     if (!sessionName.trim() || !dueDate || periodConflict) return;
     const id = createEval360Session({
@@ -118,83 +465,46 @@ export default function Assign360Modal({ targetEmployee, onClose }: Assign360Mod
     });
     if (!id) return;
     setSessionId(id);
-
-    // Auto-preload leader if found
-    const auto: PendingEvaluator[] = [];
-    if (suggestions.leader) {
-      auto.push({
-        role: 'leader',
-        evaluatorName: suggestions.leader.name,
-        evaluatorEmployeeId: suggestions.leader.id,
-        isAnonymous: false,
-      });
-    }
-    // Auto-preload self
-    auto.push({
-      role: 'self',
-      evaluatorName: targetEmployee.name,
-      evaluatorEmployeeId: targetEmployee.id,
-      isAnonymous: false,
-    });
-    setPendingEvaluators(auto);
     setStep('evaluators');
   };
 
-  /* ── Step 2: add evaluator to pending list ── */
-  const handleAddEvaluator = () => {
-    const name = isAnonymous
-      ? 'Anónimo'
-      : selectedRole === 'self'
-        ? targetEmployee.name
-        : evaluatorName.trim() || (evaluatorEmployeeId ? EMPLOYEES.find(e => e.id === evaluatorEmployeeId)?.name ?? '' : '');
-
-    if (!isAnonymous && selectedRole !== 'self' && selectedRole !== 'anonymous' && !name) return;
-
-    const finalName = selectedRole === 'anonymous' ? 'Anónimo' : name;
-    const finalAnon = isAnonymous || selectedRole === 'anonymous';
-
-    setPendingEvaluators(prev => [
-      ...prev,
-      {
-        role: selectedRole,
-        evaluatorName: finalName,
-        evaluatorEmployeeId: evaluatorEmployeeId || undefined,
-        isAnonymous: finalAnon,
-      },
-    ]);
-    setEvaluatorName('');
-    setEvaluatorEmployeeId('');
-    setIsAnonymous(false);
-  };
-
-  const handleRemovePending = (idx: number) => {
-    setPendingEvaluators(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  /* ── Step 2 submit: save all assignments ── */
+  /* Step 2 submit */
   const handleSaveAll = () => {
-    if (!sessionId || pendingEvaluators.length === 0) return;
-
+    if (!sessionId) return;
     const links: Record<string, string> = {};
-    for (const ev of pendingEvaluators) {
+
+    for (let i = 0; i < slots.length; i++) {
+      const slot = slots[i];
+      const rc = ROLE_CONFIGS[i];
+      const isSelf = rc.role === 'self';
+
+      const name = isSelf
+        ? targetEmployee.name
+        : slot.isExternal
+          ? slot.externalName.trim()
+          : (slot.employeeId ? EMPLOYEES.find(e => e.id === slot.employeeId)?.name ?? '' : '');
+
+      if (!isSelf && !name && !slot.employeeId) continue; // skip empty slots
+
       const id = saveEval360Assignment({
         sessionId,
         targetEmployeeId: targetEmployee.id,
-        role: ev.role,
-        evaluatorName: ev.evaluatorName,
-        evaluatorEmployeeId: ev.evaluatorEmployeeId,
-        isAnonymous: ev.isAnonymous,
+        role: rc.role,
+        evaluatorName: name,
+        evaluatorEmployeeId: isSelf ? targetEmployee.id : (slot.employeeId ?? undefined),
+        isAnonymous: false,
       });
-      const link = buildHashLink('/eval-360', {
+
+      links[id] = buildHashLink('/eval-360', {
         employeeId: targetEmployee.id,
-        mode: ev.role === 'self' ? 'self' : 'peer',
+        mode: rc.role === 'self' ? 'self' : 'peer',
         assignmentId: id,
-        role: ev.role,
+        role: rc.role,
         ...(sessionName ? { sessionName } : {}),
         ...(sessionDescription ? { sessionDescription } : {}),
       });
-      links[id] = link;
     }
+
     setGeneratedLinks(links);
     setStep('done');
   };
@@ -206,24 +516,21 @@ export default function Assign360Modal({ targetEmployee, onClose }: Assign360Mod
   };
 
   const handleCopyAll = () => {
-    const allLinks = Object.values(generatedLinks).join('\n');
-    void navigator.clipboard.writeText(allLinks);
+    void navigator.clipboard.writeText(Object.values(generatedLinks).join('\n'));
     setCopiedId('all');
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  /* ── Step indicator ── */
   const STEPS = [
     { key: 'config', label: 'Configurar', icon: <ClipboardList size={14} /> },
     { key: 'evaluators', label: 'Evaluadores', icon: <Users size={14} /> },
     { key: 'done', label: 'Listo', icon: <CheckCircle2 size={14} /> },
   ];
-
   const stepIdx = STEPS.findIndex(s => s.key === step);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh]">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
@@ -356,18 +663,6 @@ export default function Assign360Modal({ targetEmployee, onClose }: Assign360Mod
                 </div>
               </div>
 
-              {suggestions.leader && (
-                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-teal-50 border border-teal-100">
-                  <Info size={13} className="text-teal-600 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-xs font-semibold text-teal-800 mb-0.5">Líder detectado</p>
-                    <p className="text-[11px] text-teal-600 leading-relaxed">
-                      Se precargará <strong>{suggestions.leader.name}</strong> ({suggestions.leader.position}) como evaluador líder.
-                    </p>
-                  </div>
-                </div>
-              )}
-
               <button
                 type="button"
                 onClick={handleCreateSession}
@@ -380,155 +675,63 @@ export default function Assign360Modal({ targetEmployee, onClose }: Assign360Mod
             </div>
           )}
 
-          {/* ═══ STEP 2: Evaluators ═══ */}
+          {/* ═══ STEP 2: Evaluators (5 fixed slots) ═══ */}
           {step === 'evaluators' && (
             <div className="space-y-4">
-              {/* Pending list */}
-              {pendingEvaluators.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Evaluadores a asignar</p>
-                  {pendingEvaluators.map((ev, idx) => {
-                    const rc = ROLE_CONFIGS.find(r => r.role === ev.role)!;
-                    return (
-                      <div key={idx} className="flex items-center gap-3 p-2.5 rounded-xl border border-gray-100 bg-gray-50">
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${rc.color}15` }}>
-                          <span style={{ color: rc.color }}>{rc.icon}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-gray-800 truncate">{ev.isAnonymous ? 'Anónimo' : ev.evaluatorName}</p>
-                          <p className="text-[10px] text-gray-400">{rc.label}</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemovePending(idx)}
-                          className="p-1 text-gray-300 hover:text-red-400 transition-colors shrink-0"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    );
-                  })}
+              {/* Progress header */}
+              <div className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
+                <div>
+                  <p className="text-xs font-bold text-slate-700">5 roles de evaluación</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Preselección automática según equipo</p>
                 </div>
-              )}
-
-              {/* Role selector */}
-              <div className="border-t border-gray-100 pt-4">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2.5">Agregar evaluador</p>
-                <div className="grid grid-cols-3 gap-1.5 mb-3">
-                  {ROLE_CONFIGS.map((rc) => {
-                    const count = pendingEvaluators.filter(e => e.role === rc.role).length;
-                    return (
-                      <button
-                        key={rc.role}
-                        type="button"
-                        onClick={() => {
-                          setSelectedRole(rc.role);
-                          setEvaluatorName('');
-                          setEvaluatorEmployeeId('');
-                          setIsAnonymous(false);
-                        }}
-                        className={`flex flex-col items-start gap-1 p-2.5 rounded-xl border-2 transition-all text-left ${
-                          selectedRole === rc.role ? 'border-current shadow-sm' : 'border-gray-100 hover:border-gray-200'
-                        }`}
-                        style={selectedRole === rc.role ? { borderColor: rc.color, backgroundColor: `${rc.color}0d` } : {}}
-                      >
-                        <div className="flex items-center justify-between w-full">
-                          <span style={{ color: rc.color }}>{rc.icon}</span>
-                          {count > 0 && (
-                            <span className="text-[10px] font-bold px-1 py-0.5 rounded-full" style={{ backgroundColor: `${rc.color}18`, color: rc.color }}>
-                              {count}
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[10px] font-semibold text-gray-800 leading-tight">{rc.shortLabel}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="rounded-xl border border-gray-100 bg-gray-50 p-2.5 mb-3">
-                  <p className="text-[11px] text-gray-500">{roleConfig.description}</p>
-                </div>
-
-                {/* Role-specific inputs */}
-                {selectedRole !== 'self' && selectedRole !== 'anonymous' && (
-                  <div className="space-y-2.5">
-                    {roleConfig.allowAnonymous && (
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={isAnonymous}
-                          onChange={e => { setIsAnonymous(e.target.checked); setEvaluatorName(''); setEvaluatorEmployeeId(''); }}
-                          className="w-4 h-4 rounded accent-slate-700"
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    {slots.map((s, i) => {
+                      const rc = ROLE_CONFIGS[i];
+                      const filled = rc.role === 'self' || !!s.employeeId || (s.isExternal && s.externalName.trim() !== '');
+                      return (
+                        <div
+                          key={i}
+                          className="w-2 h-2 rounded-full transition-all"
+                          style={{ background: filled ? rc.color : '#e5e7eb' }}
                         />
-                        <span className="text-sm text-gray-700">Generar enlace anónimo</span>
-                      </label>
-                    )}
-
-                    {!isAnonymous && (
-                      <>
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-700 mb-1">Seleccionar de colaboradores</label>
-                          <select
-                            value={evaluatorEmployeeId}
-                            onChange={e => { setEvaluatorEmployeeId(e.target.value); if (e.target.value) setEvaluatorName(''); }}
-                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                          >
-                            <option value="">— Seleccionar colaborador —</option>
-                            {otherEmployees.map(e => (
-                              <option key={e.id} value={e.id}>{e.name} · {e.position}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-px bg-gray-200" />
-                          <span className="text-xs text-gray-400">o externo</span>
-                          <div className="flex-1 h-px bg-gray-200" />
-                        </div>
-
-                        <input
-                          type="text"
-                          placeholder="Nombre del evaluador externo"
-                          value={evaluatorName}
-                          onChange={e => { setEvaluatorName(e.target.value); if (e.target.value) setEvaluatorEmployeeId(''); }}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                        />
-                      </>
-                    )}
+                      );
+                    })}
                   </div>
-                )}
-
-                {selectedRole === 'self' && (
-                  <div className="rounded-xl border border-blue-100 bg-blue-50 p-2.5">
-                    <p className="text-xs text-blue-700">Se asignará autoevaluación a <strong>{targetEmployee.name}</strong>.</p>
-                  </div>
-                )}
-
-                {selectedRole === 'anonymous' && (
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-2.5">
-                    <p className="text-xs text-gray-600">Se generará un enlace anónimo compartible.</p>
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={handleAddEvaluator}
-                  disabled={
-                    !isAnonymous &&
-                    selectedRole !== 'self' &&
-                    selectedRole !== 'anonymous' &&
-                    !evaluatorName.trim() &&
-                    !evaluatorEmployeeId
-                  }
-                  className="mt-3 w-full py-2 rounded-xl border-2 border-dashed border-gray-200 text-sm text-gray-500 font-semibold flex items-center justify-center gap-1.5 hover:border-gray-300 hover:text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <Plus size={15} />
-                  Agregar evaluador
-                </button>
+                  <span className="text-xs font-black text-slate-700">{filledCount}/5</span>
+                </div>
               </div>
 
-              {/* Footer buttons */}
+              {/* 5 slots */}
+              <div className="space-y-3">
+                {slots.map((slot, i) => (
+                  <SlotCard
+                    key={i}
+                    roleIndex={i}
+                    slot={slot}
+                    targetEmployee={targetEmployee}
+                    usedIds={usedIds.filter((id) => {
+                      // Each slot can only exclude IDs used by OTHER slots (not itself)
+                      const othersIds = slots
+                        .filter((_, j) => j !== i)
+                        .map(s => s.employeeId)
+                        .filter(Boolean) as string[];
+                      return othersIds.includes(id);
+                    })}
+                    onChange={updated => updateSlot(i, updated)}
+                  />
+                ))}
+              </div>
+
+              {/* Info note */}
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-sky-50 border border-sky-100">
+                <Info size={13} className="text-sky-500 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-sky-700 leading-relaxed">
+                  La preselección se basa en el equipo de <strong>{targetEmployee.name}</strong>. Puedes cambiar cualquier evaluador antes de continuar.
+                </p>
+              </div>
+
+              {/* Footer */}
               <div className="flex gap-2 pt-2 border-t border-gray-100">
                 <button
                   type="button"
@@ -541,11 +744,11 @@ export default function Assign360Modal({ targetEmployee, onClose }: Assign360Mod
                 <button
                   type="button"
                   onClick={handleSaveAll}
-                  disabled={pendingEvaluators.length === 0}
+                  disabled={filledCount < 1}
                   className="flex-1 py-2.5 rounded-xl bg-slate-800 text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-slate-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <CheckCircle2 size={15} />
-                  Guardar y generar enlaces ({pendingEvaluators.length})
+                  Guardar y generar enlaces ({filledCount} evaluadores)
                 </button>
               </div>
             </div>
@@ -580,27 +783,28 @@ export default function Assign360Modal({ targetEmployee, onClose }: Assign360Mod
                     const rc = ROLE_CONFIGS.find(r => r.role === a.role)!;
                     const link = generatedLinks[a.id];
                     return (
-                      <div key={a.id} className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span style={{ color: rc.color }}>{rc.icon}</span>
+                      <div key={a.id} className="rounded-xl border-2 overflow-hidden" style={{ borderColor: rc?.borderColor ?? '#e5e7eb' }}>
+                        <div className="flex items-center gap-2.5 px-3 py-2.5" style={{ background: rc?.bgLight ?? '#f9fafb' }}>
+                          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0" style={{ background: rc?.color ?? '#64748b' }}>
+                            {rc?.icon}
+                          </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-gray-800 truncate">
-                              {a.isAnonymous ? 'Anónimo' : a.evaluatorName}
-                            </p>
-                            <p className="text-[10px] text-gray-400">{rc.label}</p>
+                            <p className="text-xs font-bold text-gray-800 truncate">{a.evaluatorName}</p>
+                            <p className="text-[10px] text-gray-500">{rc?.label}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <code className="flex-1 text-[9px] text-gray-500 bg-white px-2 py-1 rounded-lg border border-gray-100 truncate">
-                            {link}
-                          </code>
+                        <div className="flex items-center gap-2 px-3 py-2 bg-white">
+                          <code className="flex-1 text-[9px] text-gray-500 truncate font-mono">{link}</code>
                           <button
                             type="button"
                             onClick={() => handleCopy(link, a.id)}
-                            className="shrink-0 p-1.5 rounded-lg transition-colors"
-                            style={{ backgroundColor: copiedId === a.id ? '#d1fae5' : '#f1f5f9', color: copiedId === a.id ? '#059669' : '#64748b' }}
+                            className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
+                            style={{
+                              background: copiedId === a.id ? '#d1fae5' : '#f1f5f9',
+                              color: copiedId === a.id ? '#059669' : '#475569',
+                            }}
                           >
-                            {copiedId === a.id ? <Check size={12} /> : <Copy size={12} />}
+                            {copiedId === a.id ? <><Check size={10} /> Copiado</> : <><Copy size={10} /> Copiar</>}
                           </button>
                         </div>
                       </div>
