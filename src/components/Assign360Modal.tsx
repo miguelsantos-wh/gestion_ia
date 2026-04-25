@@ -10,6 +10,7 @@ import { EVALUATION_360_TEMPLATES, DEFAULT_360_TEMPLATE_ID } from '../data/evalu
 import type { Eval360Role, Eval360Period } from '../types/evaluation';
 import { EVAL_360_PERIODS } from '../types/evaluation';
 import type { Employee } from '../types';
+import type { Evaluation360Session, Eval360Assignment } from '../types/evaluation';
 
 /* ─── Role configs ─────────────────────────────────────────────────────────── */
 
@@ -441,10 +442,159 @@ function SlotCard({
   );
 }
 
+/* ─── Existing session panel ─────────────────────────────────────────────────── */
+
+function ExistingSessionPanel({
+  session,
+  assignments,
+  targetEmployee,
+  copiedId,
+  onCopy,
+  onCopyAll,
+}: {
+  session: Evaluation360Session;
+  assignments: Eval360Assignment[];
+  targetEmployee: Employee;
+  copiedId: string | null;
+  onCopy: (link: string, id: string) => void;
+  onCopyAll: () => void;
+}) {
+  const periodLabel = EVAL_360_PERIODS.find(p => p.value === session.period)?.label ?? session.period;
+  const completed = assignments.filter(a => !!a.completedAt).length;
+  const total = assignments.length;
+
+  const getLink = (a: Eval360Assignment) =>
+    buildHashLink('/eval-360', {
+      employeeId: targetEmployee.id,
+      mode: a.role === 'self' ? 'self' : 'peer',
+      assignmentId: a.id,
+      role: a.role,
+      ...(session.name ? { sessionName: session.name } : {}),
+      ...(session.description ? { sessionDescription: session.description } : {}),
+    });
+
+  const allLinks = assignments.map(a => getLink(a)).join('\n');
+
+  return (
+    <div className="rounded-2xl border-2 border-amber-200 overflow-hidden">
+      {/* Header */}
+      <div className="bg-amber-50 px-4 py-3 flex items-start gap-3">
+        <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+          <AlertTriangle size={15} className="text-amber-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-amber-800">Ya existe una evaluación para este periodo</p>
+          <p className="text-[11px] text-amber-600 mt-0.5 leading-relaxed">
+            <strong>{session.name}</strong> · {periodLabel}
+          </p>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="px-4 py-3 bg-white border-b border-amber-100">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Progreso</span>
+          <span className="text-xs font-black text-gray-700">{completed}/{total} completadas</span>
+        </div>
+        <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+          <div
+            className="h-2 rounded-full transition-all duration-700"
+            style={{
+              width: total > 0 ? `${Math.round((completed / total) * 100)}%` : '0%',
+              background: completed === total && total > 0 ? '#10b981' : '#f59e0b',
+            }}
+          />
+        </div>
+        {session.dueDate && (
+          <p className="text-[10px] text-gray-400 mt-1.5">
+            Fecha límite: {new Date(session.dueDate).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        )}
+      </div>
+
+      {/* Assignments list */}
+      {assignments.length > 0 && (
+        <div className="divide-y divide-gray-50">
+          {assignments.map(a => {
+            const rc = ROLE_CONFIGS.find(r => r.role === a.role);
+            const link = getLink(a);
+            const isDone = !!a.completedAt;
+            return (
+              <div key={a.id} className="px-4 py-2.5 flex items-center gap-3 bg-white hover:bg-gray-50 transition-colors">
+                {/* Role icon */}
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: rc ? `${rc.color}18` : '#f1f5f9' }}
+                >
+                  <span style={{ color: rc?.color ?? '#64748b' }}>{rc?.icon}</span>
+                </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-gray-800 truncate">{a.evaluatorName || 'Sin nombre'}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[10px] text-gray-400">{rc?.label ?? a.role}</span>
+                    {isDone ? (
+                      <span className="flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600">
+                        <Check size={9} /> Completada
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-0.5 text-[10px] font-semibold text-amber-500">
+                        <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><circle cx="4.5" cy="4.5" r="3.5" stroke="currentColor" strokeWidth="1.3"/><path d="M4.5 2.5v2l1.5 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                        Pendiente
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {/* Copy link — always shown */}
+                {!isDone && (
+                  <button
+                    type="button"
+                    onClick={() => onCopy(link, a.id)}
+                    title="Copiar enlace"
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold shrink-0 transition-all"
+                    style={{
+                      background: copiedId === a.id ? '#d1fae5' : '#f1f5f9',
+                      color: copiedId === a.id ? '#059669' : '#475569',
+                    }}
+                  >
+                    {copiedId === a.id ? <><Check size={10} /> Copiado</> : <><Copy size={10} /> Link</>}
+                  </button>
+                )}
+                {isDone && (
+                  <span
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold shrink-0"
+                    style={{ background: '#ecfdf5', color: '#059669' }}
+                  >
+                    <Check size={10} /> Lista
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Copy all footer */}
+      {assignments.length > 0 && (
+        <div className="px-4 py-2.5 bg-gray-50 border-t border-amber-100 flex items-center justify-between">
+          <p className="text-[10px] text-gray-400">Cambia el periodo para crear una nueva evaluación</p>
+          <button
+            type="button"
+            onClick={() => { void navigator.clipboard.writeText(allLinks); onCopy(allLinks, 'existing-all'); }}
+            className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-800 transition-colors"
+          >
+            {copiedId === 'existing-all' ? <><Check size={11} className="text-emerald-600" /> Copiados</> : <><Copy size={11} /> Copiar todos los links</>}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Main component ─────────────────────────────────────────────────────────── */
 
 export default function Assign360Modal({ targetEmployee, onClose }: Assign360ModalProps) {
-  const { createEval360Session, saveEval360Assignment, eval360Assignments, hasPeriodConflict } = useEvaluationStore();
+  const { createEval360Session, saveEval360Assignment, eval360Assignments, eval360Sessions, hasPeriodConflict } = useEvaluationStore();
 
   const [step, setStep] = useState<Step>('config');
 
@@ -486,6 +636,22 @@ export default function Assign360Modal({ targetEmployee, onClose }: Assign360Mod
   const periodConflict = useMemo(
     () => hasPeriodConflict(targetEmployee.id, period),
     [hasPeriodConflict, targetEmployee.id, period]
+  );
+
+  // The existing session for the conflicting period (if any)
+  const existingSession = useMemo(
+    () => periodConflict
+      ? eval360Sessions.find(s => s.targetEmployeeId === targetEmployee.id && s.period === period) ?? null
+      : null,
+    [periodConflict, eval360Sessions, targetEmployee.id, period]
+  );
+
+  // Assignments that belong to the existing session
+  const existingAssignments = useMemo(
+    () => existingSession
+      ? eval360Assignments.filter(a => a.sessionId === existingSession.id)
+      : [],
+    [existingSession, eval360Assignments]
   );
 
   /* IDs already used (to exclude from pickers) */
@@ -622,11 +788,21 @@ export default function Assign360Modal({ targetEmployee, onClose }: Assign360Mod
           {/* ═══ STEP 1: Config ═══ */}
           {step === 'config' && (
             <div className="space-y-4">
-              {periodConflict && (
+              {periodConflict && existingSession && (
+                <ExistingSessionPanel
+                  session={existingSession}
+                  assignments={existingAssignments}
+                  targetEmployee={targetEmployee}
+                  copiedId={copiedId}
+                  onCopy={handleCopy}
+                  onCopyAll={handleCopyAll}
+                />
+              )}
+              {periodConflict && !existingSession && (
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200">
                   <AlertTriangle size={15} className="text-amber-500 shrink-0 mt-0.5" />
                   <p className="text-xs text-amber-700 leading-relaxed">
-                    Ya existe una evaluación para <strong>{targetEmployee.name}</strong> en el periodo seleccionado. Solo se permite una evaluación 360 por periodo.
+                    Ya existe una evaluación para <strong>{targetEmployee.name}</strong> en el periodo seleccionado.
                   </p>
                 </div>
               )}
