@@ -442,30 +442,42 @@ export default function Eval360SessionResultsView({ session, onBack, embedded }:
 const STATUS_CONFIG = {
   pendiente: {
     label: 'Pendiente',
-    bg: 'bg-gray-100',
-    text: 'text-gray-600',
-    border: 'border-gray-200',
-    cardBorder: 'border-l-gray-300',
-    barColor: '#94a3b8',
-    dot: 'bg-gray-400',
+    bg: 'bg-slate-100',
+    text: 'text-slate-700',
+    border: 'border-slate-200',
+    cardBorder: 'border-l-slate-400',
+    barColor: '#64748b',
+    dot: 'bg-slate-500',
+    badgeBg: 'bg-gradient-to-r from-slate-100 to-slate-50',
+    headerGradient: 'from-slate-50 to-slate-100',
+    accentLight: '#f1f5f9',
+    accentDark: '#475569',
   },
   en_progreso: {
     label: 'En progreso',
-    bg: 'bg-blue-100',
-    text: 'text-blue-700',
-    border: 'border-blue-200',
-    cardBorder: 'border-l-blue-400',
-    barColor: '#2563eb',
-    dot: 'bg-blue-500',
+    bg: 'bg-sky-100',
+    text: 'text-sky-700',
+    border: 'border-sky-200',
+    cardBorder: 'border-l-sky-500',
+    barColor: '#0ea5e9',
+    dot: 'bg-sky-500 animate-pulse',
+    badgeBg: 'bg-gradient-to-r from-sky-100 to-blue-50',
+    headerGradient: 'from-sky-50 to-cyan-100',
+    accentLight: '#e0f2fe',
+    accentDark: '#0369a1',
   },
   completado: {
     label: 'Completado',
     bg: 'bg-emerald-100',
     text: 'text-emerald-700',
     border: 'border-emerald-200',
-    cardBorder: 'border-l-emerald-400',
-    barColor: '#059669',
+    cardBorder: 'border-l-emerald-500',
+    barColor: '#10b981',
     dot: 'bg-emerald-500',
+    badgeBg: 'bg-gradient-to-r from-emerald-100 to-green-50',
+    headerGradient: 'from-emerald-50 to-green-100',
+    accentLight: '#ecfdf5',
+    accentDark: '#059669',
   },
 } as const;
 
@@ -593,43 +605,60 @@ function PdiSection({
             {pdiItems.map((item, idx) => {
               const statusCfg = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pendiente;
               const progressVal = Math.min(100, Math.max(0, item.progress ?? 0));
+              const isCompleted = item.status === 'completado';
+              const isInProgress = item.status === 'en_progreso';
 
               return (
                 <div
                   key={idx}
-                  className={`bg-white rounded-2xl border-l-4 shadow-sm overflow-hidden transition-all hover:shadow-md ${statusCfg.cardBorder}`}
-                  style={{ border: '1px solid #e2e8f0', borderLeftWidth: '4px' }}
+                  className={`rounded-2xl border shadow-sm overflow-hidden transition-all hover:shadow-lg ${isCompleted ? 'opacity-90' : ''}`}
+                  style={{
+                    background: statusCfg.accentLight,
+                    border: `2px solid ${statusCfg.accentDark}40`,
+                    borderLeftWidth: '5px',
+                    borderLeftColor: statusCfg.accentDark,
+                  }}
                 >
-                  {/* Card header */}
-                  <div className="px-4 pt-3.5 pb-2 flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <div className={`w-2 h-2 rounded-full shrink-0 ${statusCfg.dot}`} />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                  {/* Card header with gradient background */}
+                  <div
+                    className="px-4 pt-3.5 pb-2 flex items-start justify-between gap-3"
+                    style={{ background: `linear-gradient(135deg, ${statusCfg.accentLight}, rgba(255,255,255,0.5))` }}
+                  >
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${statusCfg.dot} shadow-sm`} />
+                      <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: statusCfg.accentDark }}>
                         Compromiso {idx + 1}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {/* Status selector as styled badge */}
-                      <div className="relative">
+                      <div className="relative group">
                         <select
                           value={item.status}
                           onChange={e => onUpdate(idx, 'status', e.target.value)}
-                          className={`appearance-none text-[11px] font-bold pl-2.5 pr-6 py-1 rounded-full border cursor-pointer focus:outline-none ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}
+                          className={`appearance-none text-[11px] font-bold pl-3 pr-6 py-1.5 rounded-full border-2 cursor-pointer focus:outline-none transition-all ${statusCfg.badgeBg}`}
+                          style={{
+                            color: statusCfg.accentDark,
+                            borderColor: statusCfg.accentDark,
+                          }}
                         >
                           <option value="pendiente">Pendiente</option>
                           <option value="en_progreso">En progreso</option>
                           <option value="completado">Completado</option>
                         </select>
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: statusCfg.accentDark }}>
                           <svg width="8" height="5" viewBox="0 0 8 5" fill="none"><path d="M1 1l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => onRemove(idx)}
-                        className="w-6 h-6 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                        className="w-6 h-6 rounded-lg flex items-center justify-center transition-all hover:scale-110"
+                        style={{ color: statusCfg.accentDark, background: 'rgba(255,0,0,0)' }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,0,0,0)'}
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={13} className="text-red-500" />
                       </button>
                     </div>
                   </div>
@@ -705,10 +734,10 @@ function PdiSection({
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide block mb-1">
-                        Avance — <span className={`font-black ${statusCfg.text}`}>{progressVal}%</span>
+                      <label className="text-[10px] font-semibold uppercase tracking-wide block mb-2" style={{ color: statusCfg.accentDark }}>
+                        Avance — <span className={`font-black text-lg`} style={{ color: statusCfg.barColor }}>{progressVal}%</span>
                       </label>
-                      <div className="space-y-1.5">
+                      <div className="space-y-2">
                         <input
                           type="range"
                           min={0}
@@ -716,15 +745,29 @@ function PdiSection({
                           step={5}
                           value={progressVal}
                           onChange={e => onUpdate(idx, 'progress', Number(e.target.value))}
-                          className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                          style={{ accentColor: statusCfg.barColor }}
+                          className="w-full h-2 rounded-full appearance-none cursor-pointer transition-all"
+                          style={{
+                            accentColor: statusCfg.barColor,
+                            background: `linear-gradient(to right, ${statusCfg.barColor} 0%, ${statusCfg.barColor} ${progressVal}%, #e5e7eb ${progressVal}%, #e5e7eb 100%)`,
+                          }}
                         />
-                        <div className="w-full bg-gray-100 rounded-full h-1.5">
+                        <div className="w-full rounded-full h-2 overflow-hidden" style={{ background: 'rgba(0,0,0,0.05)' }}>
                           <div
-                            className="h-1.5 rounded-full transition-all duration-500"
-                            style={{ width: `${progressVal}%`, backgroundColor: statusCfg.barColor }}
+                            className="h-2 rounded-full transition-all duration-700 shadow-sm"
+                            style={{
+                              width: `${progressVal}%`,
+                              background: `linear-gradient(90deg, ${statusCfg.barColor}, ${statusCfg.barColor}dd)`,
+                            }}
                           />
                         </div>
+                        {isCompleted && (
+                          <div className="flex items-center justify-end gap-1 text-emerald-600 text-[10px] font-bold animate-pulse">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                              <path d="M10 3L4.5 9L2 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            100% completado
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -733,30 +776,41 @@ function PdiSection({
             })}
 
             {/* Summary footer */}
-            <div className="flex items-center justify-between pt-2 px-1">
-              <div className="flex items-center gap-3">
-                {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
-                  const count = pdiItems.filter(p => p.status === key).length;
-                  if (count === 0) return null;
-                  return (
-                    <div key={key} className="flex items-center gap-1.5">
-                      <div className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-                      <span className="text-[11px] text-gray-500 font-medium">{cfg.label}: <span className="font-bold text-gray-700">{count}</span></span>
-                    </div>
-                  );
-                })}
+            <div className="mt-4 pt-4 border-t" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+                    const count = pdiItems.filter(p => p.status === key).length;
+                    if (count === 0) return null;
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 text-[11px] font-bold transition-all hover:shadow-sm"
+                        style={{
+                          background: cfg.accentLight,
+                          borderColor: cfg.accentDark,
+                          color: cfg.accentDark,
+                        }}
+                      >
+                        <div className={`w-2 h-2 rounded-full ${cfg.dot}`} />
+                        {cfg.label}
+                        <span className="ml-1 font-black text-sm">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {pdiDirty && (
+                  <button
+                    type="button"
+                    onClick={onSave}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90 shadow-md hover:shadow-lg"
+                    style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)' }}
+                  >
+                    <Save size={12} />
+                    Guardar cambios
+                  </button>
+                )}
               </div>
-              {pdiDirty && (
-                <button
-                  type="button"
-                  onClick={onSave}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90"
-                  style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)' }}
-                >
-                  <Save size={12} />
-                  Guardar cambios
-                </button>
-              )}
             </div>
           </div>
         )}
