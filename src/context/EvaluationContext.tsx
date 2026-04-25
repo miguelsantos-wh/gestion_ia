@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { PerformanceLevel, PotentialLevel } from '../types';
-import type { Employee360Data, Eval360Assignment, Evaluation360Session, EvaluationStorage, PeerSubmission, PerceptionPlacement, PercepcionAssignment, PdiItem } from '../types/evaluation';
+import type { Employee360Data, Eval360Assignment, EvaluationTemplate, Evaluation360Session, EvaluationStorage, PeerSubmission, PerceptionPlacement, PercepcionAssignment, PdiItem } from '../types/evaluation';
 import { STORAGE_KEY } from '../types/evaluation';
 import { EMPLOYEES } from '../data/mockData';
 import { DEFAULT_360_TEMPLATE_ID } from '../data/evaluation360Template';
@@ -67,7 +67,7 @@ function migrateLegacyAssignments(
 function loadStorage(): EvaluationStorage {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [], pdiItems: {} };
+    if (!raw) return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [], pdiItems: {}, customTemplates: [] };
     const p = JSON.parse(raw) as EvaluationStorage;
 
     const rawAssignments = (p.eval360Assignments ?? []).map(a => ({ ...a, sessionId: a.sessionId ?? 'legacy' }));
@@ -86,6 +86,7 @@ function loadStorage(): EvaluationStorage {
       eval360Assignments: migratedAssignments,
       eval360Sessions: cleanSessions,
       pdiItems: p.pdiItems ?? {},
+      customTemplates: p.customTemplates ?? [],
     };
 
     // Persist if anything changed (migration or cleanup)
@@ -99,7 +100,7 @@ function loadStorage(): EvaluationStorage {
 
     return storage;
   } catch {
-    return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [], pdiItems: {} };
+    return { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [], pdiItems: {}, customTemplates: [] };
   }
 }
 
@@ -136,6 +137,9 @@ interface EvaluationContextValue {
   syncCompletedEvaluations: () => void;
   resetAll: () => void;
   hasPeriodConflict: (targetEmployeeId: string, period: string, excludeSessionId?: string) => boolean;
+  customTemplates: EvaluationTemplate[];
+  saveCustomTemplate: (template: EvaluationTemplate) => void;
+  removeCustomTemplate: (id: string) => void;
 }
 
 const EvaluationContext = createContext<EvaluationContextValue | null>(null);
@@ -476,8 +480,31 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
     [persist]
   );
 
+  const saveCustomTemplate = useCallback(
+    (template: EvaluationTemplate) => {
+      setStore((prev) => {
+        const existing = (prev.customTemplates ?? []).filter(t => t.id !== template.id);
+        const next: EvaluationStorage = { ...prev, customTemplates: [...existing, template] };
+        persist(next);
+        return next;
+      });
+    },
+    [persist]
+  );
+
+  const removeCustomTemplate = useCallback(
+    (id: string) => {
+      setStore((prev) => {
+        const next: EvaluationStorage = { ...prev, customTemplates: (prev.customTemplates ?? []).filter(t => t.id !== id) };
+        persist(next);
+        return next;
+      });
+    },
+    [persist]
+  );
+
   const resetAll = useCallback(() => {
-    const empty: EvaluationStorage = { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [], pdiItems: {} };
+    const empty: EvaluationStorage = { threeSixty: {}, percepcion: {}, autoPercepcion: {}, assignments: [], eval360Assignments: [], eval360Sessions: [], pdiItems: {}, customTemplates: [] };
     persist(empty);
     setStore(empty);
   }, [persist]);
@@ -491,6 +518,7 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
       eval360Assignments: store.eval360Assignments ?? [],
       eval360Sessions: store.eval360Sessions ?? [],
       pdiItems: store.pdiItems ?? {},
+      customTemplates: store.customTemplates ?? [],
       savePdiItems,
       saveSelfEvaluation,
       savePeerEvaluation,
@@ -506,6 +534,8 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
       syncCompletedEvaluations,
       resetAll,
       hasPeriodConflict,
+      saveCustomTemplate,
+      removeCustomTemplate,
     }),
     [
       store.threeSixty,
@@ -515,6 +545,7 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
       store.eval360Assignments,
       store.eval360Sessions,
       store.pdiItems,
+      store.customTemplates,
       savePdiItems,
       saveSelfEvaluation,
       savePeerEvaluation,
@@ -530,6 +561,8 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
       syncCompletedEvaluations,
       resetAll,
       hasPeriodConflict,
+      saveCustomTemplate,
+      removeCustomTemplate,
     ]
   );
 

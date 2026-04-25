@@ -760,15 +760,6 @@ function PdiSection({
                             background: `linear-gradient(to right, ${statusCfg.barColor} 0%, ${statusCfg.barColor} ${progressVal}%, #e5e7eb ${progressVal}%, #e5e7eb 100%)`,
                           }}
                         />
-                        <div className="w-full rounded-full h-2 overflow-hidden" style={{ background: 'rgba(0,0,0,0.05)' }}>
-                          <div
-                            className="h-2 rounded-full transition-all duration-700 shadow-sm"
-                            style={{
-                              width: `${progressVal}%`,
-                              background: `linear-gradient(90deg, ${statusCfg.barColor}, ${statusCfg.barColor}dd)`,
-                            }}
-                          />
-                        </div>
                         {isCompleted && (
                           <div className="flex items-center justify-end gap-1 text-emerald-600 text-[10px] font-bold animate-pulse">
                             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">

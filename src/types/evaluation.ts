@@ -126,4 +126,6 @@ export interface EvaluationStorage {
   eval360Sessions: Evaluation360Session[];
   /** PDI items keyed by sessionId */
   pdiItems: Record<string, PdiItem[]>;
+  /** User-created custom evaluation templates */
+  customTemplates: EvaluationTemplate[];
 }

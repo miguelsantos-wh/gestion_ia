@@ -4,6 +4,7 @@ import DashboardPage from './components/DashboardPage';
 import EmpleadoAPage from './components/EmpleadoAPage';
 import Evaluation360Page from './components/Evaluation360Page';
 import AciertosDesaciertosPage from './components/AciertosDesaciertosPage';
+import TemplatesPage from './components/TemplatesPage';
 import FormShowcasePage from './components/FormShowcasePage';
 import DesignSystemPage from './components/DesignSystemPage';
 import EmployeeListPage from './components/EmployeeListPage';
@@ -25,6 +26,7 @@ const PAGE_TITLES: Record<SidebarView, { title: string; sub: string }> = {
   empleadoA: { title: 'Empleado A', sub: 'Resumen, colaboradores, matriz y resultados' },
   eval360: { title: 'Evaluación 360', sub: 'Asignación, seguimiento y análisis de evaluaciones 360' },
   aciertos: { title: 'Aciertos y Desaciertos', sub: 'Evaluación de fortalezas y áreas de mejora' },
+  templates: { title: 'Plantillas de Evaluación', sub: 'Crea y gestiona las plantillas de preguntas para evaluaciones 360' },
   formulario: { title: 'Guía de Formularios', sub: 'Referencia visual de todos los elementos de formulario disponibles' },
   designsystem: { title: 'Design System', sub: 'Documentación visual de componentes y patrones de diseño' },
   empleados: { title: 'Empleados', sub: 'Directorio y perfiles del equipo' },
@@ -65,6 +67,7 @@ function MainApp() {
             {activeView === 'empleadoA' && <EmpleadoAPage />}
             {activeView === 'eval360' && <Evaluation360Page />}
             {activeView === 'aciertos' && <AciertosDesaciertosPage />}
+            {activeView === 'templates' && <TemplatesPage />}
             {activeView === 'formulario' && <FormShowcasePage />}
           </main>
         )}
