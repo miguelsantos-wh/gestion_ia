@@ -48,9 +48,10 @@ function formatDate(iso: string) {
 interface Props {
   session: Evaluation360Session;
   onBack: () => void;
+  embedded?: boolean;
 }
 
-export default function Eval360SessionResultsView({ session, onBack }: Props) {
+export default function Eval360SessionResultsView({ session, onBack, embedded }: Props) {
   const { threeSixty, eval360Assignments, pdiItems: allPdi, savePdiItems } = useEvaluationStore();
   const [pdiItems, setPdiItems] = useState<PdiItem[]>(() => allPdi[session.id] ?? []);
   const [pdiDirty, setPdiDirty] = useState(false);
@@ -137,15 +138,17 @@ export default function Eval360SessionResultsView({ session, onBack }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Back */}
-      <button
-        type="button"
-        onClick={onBack}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors"
-      >
-        <ArrowLeft size={15} />
-        Volver a la lista de evaluaciones
-      </button>
+      {/* Back — hidden when embedded */}
+      {!embedded && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+        >
+          <ArrowLeft size={15} />
+          Volver a la lista de evaluaciones
+        </button>
+      )}
 
       {/* Session description card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
