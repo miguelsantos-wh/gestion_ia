@@ -424,134 +424,340 @@ export default function Eval360SessionResultsView({ session, onBack, embedded }:
       )}
 
       {/* PDI */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <TrendingUp size={16} className="text-blue-600" />
-            <h4 className="text-sm font-bold text-gray-900">Compromisos y Plan de Acción (PDI)</h4>
-            {pdiDirty && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Sin guardar</span>}
+      <PdiSection
+        pdiItems={pdiItems}
+        pdiDirty={pdiDirty}
+        employee={employee}
+        session={session}
+        eval360Assignments={eval360Assignments}
+        onAdd={addPdi}
+        onUpdate={updatePdi}
+        onRemove={removePdi}
+        onSave={handleSavePdi}
+      />
+    </div>
+  );
+}
+
+const STATUS_CONFIG = {
+  pendiente: {
+    label: 'Pendiente',
+    bg: 'bg-gray-100',
+    text: 'text-gray-600',
+    border: 'border-gray-200',
+    cardBorder: 'border-l-gray-300',
+    barColor: '#94a3b8',
+    dot: 'bg-gray-400',
+  },
+  en_progreso: {
+    label: 'En progreso',
+    bg: 'bg-blue-100',
+    text: 'text-blue-700',
+    border: 'border-blue-200',
+    cardBorder: 'border-l-blue-400',
+    barColor: '#2563eb',
+    dot: 'bg-blue-500',
+  },
+  completado: {
+    label: 'Completado',
+    bg: 'bg-emerald-100',
+    text: 'text-emerald-700',
+    border: 'border-emerald-200',
+    cardBorder: 'border-l-emerald-400',
+    barColor: '#059669',
+    dot: 'bg-emerald-500',
+  },
+} as const;
+
+function PdiSection({
+  pdiItems,
+  pdiDirty,
+  employee,
+  session,
+  eval360Assignments,
+  onAdd,
+  onUpdate,
+  onRemove,
+  onSave,
+}: {
+  pdiItems: PdiItem[];
+  pdiDirty: boolean;
+  employee: ReturnType<typeof EMPLOYEES.find>;
+  session: Evaluation360Session;
+  eval360Assignments: { id: string; sessionId: string; completedAt?: string; isAnonymous: boolean; role: string; evaluatorName: string }[];
+  onAdd: () => void;
+  onUpdate: (idx: number, field: keyof PdiItem, value: string | number) => void;
+  onRemove: (idx: number) => void;
+  onSave: () => void;
+}) {
+  const completedCount = pdiItems.filter(p => p.status === 'completado').length;
+  const inProgressCount = pdiItems.filter(p => p.status === 'en_progreso').length;
+  const totalProgress = pdiItems.length > 0
+    ? Math.round(pdiItems.reduce((sum, p) => sum + (p.progress ?? 0), 0) / pdiItems.length)
+    : 0;
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%)', border: '1px solid #bae6fd' }}>
+      {/* Header */}
+      <div className="px-6 pt-5 pb-4" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)' }}>
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #3b82f6, #06b6d4)' }}>
+              <TrendingUp size={18} className="text-white" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white">Compromisos y Plan de Acción</h4>
+              <p className="text-xs text-blue-300 font-medium mt-0.5">PDI · {employee?.name ?? 'Colaborador'}</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {pdiDirty && (
               <button
                 type="button"
-                onClick={handleSavePdi}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors"
+                onClick={onSave}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)', color: 'white' }}
               >
-                <Save size={13} />
-                Guardar
+                <Save size={12} />
+                Guardar cambios
               </button>
             )}
             <button
               type="button"
-              onClick={addPdi}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold hover:bg-slate-700 transition-colors"
+              onClick={onAdd}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-all border border-white/20"
             >
-              <Plus size={13} />
+              <Plus size={12} />
               Agregar
             </button>
           </div>
         </div>
 
+        {/* Stats row */}
+        {pdiItems.length > 0 && (
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            <div className="bg-white/10 rounded-xl px-3 py-2 text-center">
+              <p className="text-lg font-black text-white">{pdiItems.length}</p>
+              <p className="text-[10px] text-blue-300">compromisos</p>
+            </div>
+            <div className="bg-white/10 rounded-xl px-3 py-2 text-center">
+              <p className="text-lg font-black text-emerald-300">{completedCount}</p>
+              <p className="text-[10px] text-blue-300">completados</p>
+            </div>
+            <div className="bg-white/10 rounded-xl px-3 py-2 text-center">
+              <p className="text-lg font-black text-cyan-300">{totalProgress}%</p>
+              <p className="text-[10px] text-blue-300">avance promedio</p>
+            </div>
+          </div>
+        )}
+
+        {/* Overall progress bar */}
+        {pdiItems.length > 0 && (
+          <div className="mt-3">
+            <div className="w-full bg-white/10 rounded-full h-2">
+              <div
+                className="h-2 rounded-full transition-all duration-700"
+                style={{
+                  width: `${totalProgress}%`,
+                  background: totalProgress === 100 ? 'linear-gradient(90deg,#10b981,#34d399)' : 'linear-gradient(90deg,#3b82f6,#06b6d4)',
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="p-5">
         {pdiItems.length === 0 ? (
-          <div className="text-center py-8 rounded-xl border-2 border-dashed border-gray-200 text-gray-400 text-xs">
-            Haz clic en "Agregar" para crear el plan de acción del colaborador
+          <div className="text-center py-10">
+            <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #dbeafe, #bfdbfe)' }}>
+              <TrendingUp size={22} className="text-blue-400" />
+            </div>
+            <p className="text-sm font-bold text-slate-600">Sin compromisos registrados</p>
+            <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto leading-relaxed">
+              Define acciones concretas para el desarrollo del colaborador
+            </p>
+            <button
+              type="button"
+              onClick={onAdd}
+              className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white mx-auto transition-all hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg, #0f172a, #1e3a5f)' }}
+            >
+              <Plus size={14} />
+              Crear primer compromiso
+            </button>
           </div>
         ) : (
-          <div className="overflow-x-auto -mx-1">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Área a mejorar</th>
-                  <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Cómo se llevará a cabo</th>
-                  <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Responsable</th>
-                  <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Plazo</th>
-                  <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Avance %</th>
-                  <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Estado</th>
-                  <th className="px-3 py-2.5 w-8" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {pdiItems.map((item, idx) => (
-                  <tr key={idx} className="group">
-                    <td className="px-3 py-2">
+          <div className="space-y-3">
+            {pdiItems.map((item, idx) => {
+              const statusCfg = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pendiente;
+              const progressVal = Math.min(100, Math.max(0, item.progress ?? 0));
+
+              return (
+                <div
+                  key={idx}
+                  className={`bg-white rounded-2xl border-l-4 shadow-sm overflow-hidden transition-all hover:shadow-md ${statusCfg.cardBorder}`}
+                  style={{ border: '1px solid #e2e8f0', borderLeftWidth: '4px' }}
+                >
+                  {/* Card header */}
+                  <div className="px-4 pt-3.5 pb-2 flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className={`w-2 h-2 rounded-full shrink-0 ${statusCfg.dot}`} />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                        Compromiso {idx + 1}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* Status selector as styled badge */}
+                      <div className="relative">
+                        <select
+                          value={item.status}
+                          onChange={e => onUpdate(idx, 'status', e.target.value)}
+                          className={`appearance-none text-[11px] font-bold pl-2.5 pr-6 py-1 rounded-full border cursor-pointer focus:outline-none ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}
+                        >
+                          <option value="pendiente">Pendiente</option>
+                          <option value="en_progreso">En progreso</option>
+                          <option value="completado">Completado</option>
+                        </select>
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <svg width="8" height="5" viewBox="0 0 8 5" fill="none"><path d="M1 1l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => onRemove(idx)}
+                        className="w-6 h-6 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Fields grid */}
+                  <div className="px-4 pb-3.5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Area */}
+                    <div>
+                      <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide block mb-1">
+                        Área a mejorar
+                      </label>
                       <input
                         type="text"
                         value={item.area}
-                        onChange={e => updatePdi(idx, 'area', e.target.value)}
-                        placeholder="Ej. Liderazgo"
-                        className="w-full text-xs px-2 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-[110px]"
+                        onChange={e => onUpdate(idx, 'area', e.target.value)}
+                        placeholder="Ej. Liderazgo, Comunicación…"
+                        className="w-full text-xs px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 transition-all font-medium text-gray-800 placeholder:font-normal placeholder:text-gray-400"
                       />
-                    </td>
-                    <td className="px-3 py-2">
+                    </div>
+
+                    {/* Responsible */}
+                    <div>
+                      <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide block mb-1">
+                        Responsable
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={item.responsible}
+                          onChange={e => onUpdate(idx, 'responsible', e.target.value)}
+                          className="w-full appearance-none text-xs pl-3 pr-7 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 text-gray-800 cursor-pointer transition-all"
+                        >
+                          <option value={employee?.name ?? ''}>{employee?.name ?? 'Evaluado'} (Evaluado)</option>
+                          {eval360Assignments
+                            .filter(a => a.sessionId === session.id && a.completedAt && !a.isAnonymous && a.role !== 'self')
+                            .map(a => (
+                              <option key={a.id} value={a.evaluatorName}>
+                                {a.evaluatorName} ({EVAL_360_ROLE_LABELS[a.role as Eval360Role]})
+                              </option>
+                            ))
+                          }
+                        </select>
+                        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                          <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action */}
+                    <div className="sm:col-span-2">
+                      <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide block mb-1">
+                        Acción / Cómo se llevará a cabo
+                      </label>
                       <input
                         type="text"
                         value={item.action}
-                        onChange={e => updatePdi(idx, 'action', e.target.value)}
-                        placeholder="Acción específica"
-                        className="w-full text-xs px-2 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-[130px]"
+                        onChange={e => onUpdate(idx, 'action', e.target.value)}
+                        placeholder="Describe la acción concreta a realizar…"
+                        className="w-full text-xs px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 transition-all text-gray-800 placeholder:text-gray-400"
                       />
-                    </td>
-                    <td className="px-3 py-2">
-                      <select
-                        value={item.responsible}
-                        onChange={e => updatePdi(idx, 'responsible', e.target.value)}
-                        className="w-full text-xs px-2 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-[110px]"
-                      >
-                        <option value={employee?.name ?? ''}>{employee?.name ?? 'Evaluado'} (Evaluado)</option>
-                        {eval360Assignments
-                          .filter(a => a.sessionId === session.id && a.completedAt && !a.isAnonymous && a.role !== 'self')
-                          .map(a => (
-                            <option key={a.id} value={a.evaluatorName}>{a.evaluatorName} ({EVAL_360_ROLE_LABELS[a.role]})</option>
-                          ))
-                        }
-                      </select>
-                    </td>
-                    <td className="px-3 py-2">
+                    </div>
+
+                    {/* Deadline + Progress */}
+                    <div>
+                      <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide block mb-1">
+                        Fecha límite
+                      </label>
                       <input
                         type="date"
                         value={item.deadline}
-                        onChange={e => updatePdi(idx, 'deadline', e.target.value)}
-                        className="w-full text-xs px-2 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        onChange={e => onUpdate(idx, 'deadline', e.target.value)}
+                        className="w-full text-xs px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 text-gray-700 transition-all"
                       />
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-1.5">
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide block mb-1">
+                        Avance — <span className={`font-black ${statusCfg.text}`}>{progressVal}%</span>
+                      </label>
+                      <div className="space-y-1.5">
                         <input
-                          type="number"
+                          type="range"
                           min={0}
                           max={100}
-                          value={item.progress}
-                          onChange={e => updatePdi(idx, 'progress', Number(e.target.value))}
-                          className="w-14 text-xs px-2 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          step={5}
+                          value={progressVal}
+                          onChange={e => onUpdate(idx, 'progress', Number(e.target.value))}
+                          className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                          style={{ accentColor: statusCfg.barColor }}
                         />
-                        <span className="text-gray-400">%</span>
+                        <div className="w-full bg-gray-100 rounded-full h-1.5">
+                          <div
+                            className="h-1.5 rounded-full transition-all duration-500"
+                            style={{ width: `${progressVal}%`, backgroundColor: statusCfg.barColor }}
+                          />
+                        </div>
                       </div>
-                    </td>
-                    <td className="px-3 py-2">
-                      <select
-                        value={item.status}
-                        onChange={e => updatePdi(idx, 'status', e.target.value)}
-                        className="w-full text-xs px-2 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      >
-                        <option value="pendiente">Pendiente</option>
-                        <option value="en_progreso">En progreso</option>
-                        <option value="completado">Completado</option>
-                      </select>
-                    </td>
-                    <td className="px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => removePdi(idx)}
-                        className="p-1 text-gray-300 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Summary footer */}
+            <div className="flex items-center justify-between pt-2 px-1">
+              <div className="flex items-center gap-3">
+                {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+                  const count = pdiItems.filter(p => p.status === key).length;
+                  if (count === 0) return null;
+                  return (
+                    <div key={key} className="flex items-center gap-1.5">
+                      <div className={`w-2 h-2 rounded-full ${cfg.dot}`} />
+                      <span className="text-[11px] text-gray-500 font-medium">{cfg.label}: <span className="font-bold text-gray-700">{count}</span></span>
+                    </div>
+                  );
+                })}
+              </div>
+              {pdiDirty && (
+                <button
+                  type="button"
+                  onClick={onSave}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)' }}
+                >
+                  <Save size={12} />
+                  Guardar cambios
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
