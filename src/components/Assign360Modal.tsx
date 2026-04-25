@@ -144,9 +144,38 @@ type Step = 'config' | 'evaluators' | 'done';
 /* ─── Tooltip component ─────────────────────────────────────────────────────── */
 function Tooltip({ text }: { text: string }) {
   const [show, setShow] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    if (!show || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const tooltipW = 220;
+    const spaceBelow = window.innerHeight - rect.bottom;
+
+    if (spaceBelow > 80) {
+      setTooltipStyle({
+        position: 'fixed',
+        top: rect.bottom + 6,
+        left: rect.left + rect.width / 2 - tooltipW / 2,
+        width: tooltipW,
+        zIndex: 9999,
+      });
+    } else {
+      setTooltipStyle({
+        position: 'fixed',
+        bottom: window.innerHeight - rect.top + 6,
+        left: rect.left + rect.width / 2 - tooltipW / 2,
+        width: tooltipW,
+        zIndex: 9999,
+      });
+    }
+  }, [show]);
+
   return (
     <div className="relative inline-flex">
       <button
+        ref={triggerRef}
         type="button"
         className="text-gray-300 hover:text-gray-500 transition-colors"
         onMouseEnter={() => setShow(true)}
@@ -155,9 +184,11 @@ function Tooltip({ text }: { text: string }) {
         <HelpCircle size={13} />
       </button>
       {show && (
-        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 bg-gray-900 text-white text-[11px] leading-relaxed px-3 py-2 rounded-lg shadow-xl pointer-events-none">
+        <div
+          style={tooltipStyle}
+          className="bg-gray-900 text-white text-[11px] leading-relaxed px-3 py-2 rounded-lg shadow-2xl pointer-events-none"
+        >
           {text}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
         </div>
       )}
     </div>
