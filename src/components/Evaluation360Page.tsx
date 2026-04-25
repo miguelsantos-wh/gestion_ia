@@ -12,10 +12,6 @@ import type { Employee } from '../types';
 import Evaluation360Results from './Evaluation360Results';
 import PendingEvaluations360 from './PendingEvaluations360';
 import Assign360Modal from './Assign360Modal';
-import Eval360SessionStatusView from './Eval360SessionStatusView';
-import Eval360SessionResultsView from './Eval360SessionResultsView';
-import type { Evaluation360Session } from '../types/evaluation';
-import { EVAL_360_PERIODS } from '../types/evaluation';
 
 const COMPETENCY_NAMES = [
   'Liderazgo', 'Trabajo en equipo', 'Resolución de problemas',
@@ -552,234 +548,9 @@ function GlobalResults360() {
   );
 }
 
-/** Card de empleado para la lista izquierda del admin 360 */
-function Employee360Card({
-  employee,
-  onSelect,
-  isSelected,
-}: {
-  employee: Employee;
-  onSelect: () => void;
-  isSelected: boolean;
-}) {
-  const { eval360Assignments, eval360Sessions, threeSixty } = useEvaluationStore();
-
-  // Última sesión
-  const sessions = eval360Sessions.filter(s => s.targetEmployeeId === employee.id);
-  const lastSession = sessions.sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;
-
-  const sessionAssignments = lastSession
-    ? eval360Assignments.filter(a => a.sessionId === lastSession.id)
-    : eval360Assignments.filter(a => a.targetEmployeeId === employee.id);
-
-  const completed = sessionAssignments.filter(a => a.completedAt).length;
-  const total = sessionAssignments.length;
-  const pct = total > 0 ? (completed / total) * 100 : 0;
-  const overallScore = computeOverallScore(employee.id, threeSixty);
-  const periodLabel = lastSession ? (EVAL_360_PERIODS.find(p => p.value === lastSession.period)?.label ?? lastSession.period) : null;
-
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`w-full text-left rounded-2xl border transition-all duration-200 overflow-hidden bg-white ${
-        isSelected
-          ? 'border-slate-400 shadow-md ring-2 ring-slate-200'
-          : 'border-gray-100 hover:border-gray-200 hover:shadow-sm'
-      }`}
-    >
-      <div className="p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-600 shrink-0">
-            {employee.avatar}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-semibold text-sm text-gray-900 truncate">{employee.name}</div>
-            <div className="text-xs text-gray-500 truncate">{employee.position}</div>
-            <div className="text-xs text-gray-400">{employee.department}</div>
-          </div>
-          {overallScore !== null ? (
-            <span className={`text-xs font-black px-2 py-1 rounded-lg shrink-0 ${getScoreBg(overallScore)}`}>
-              {overallScore.toFixed(1)}
-            </span>
-          ) : (
-            <ChevronRight size={14} className={`text-gray-300 shrink-0 mt-1 transition-transform ${isSelected ? 'text-slate-500' : ''}`} />
-          )}
-        </div>
-
-        <div className="mt-3 space-y-1.5">
-          {periodLabel && (
-            <p className="text-[10px] text-gray-400 truncate">{periodLabel}</p>
-          )}
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-500">{completed}/{total} evaluadores</span>
-            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-              total === 0 ? 'bg-gray-100 text-gray-400' :
-              pct === 100 ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
-            }`}>
-              {total === 0 ? 'Sin asignar' : pct === 100 ? 'Completo' : 'En progreso'}
-            </span>
-          </div>
-          {total > 0 && (
-            <div className="w-full bg-gray-100 rounded-full h-1">
-              <div
-                className="h-1 rounded-full transition-all"
-                style={{ width: `${pct}%`, backgroundColor: pct === 100 ? '#059669' : '#2563eb' }}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-    </button>
-  );
-}
-
-/** Panel derecho: muestra estado y resultados de la última sesión del colaborador */
-function Employee360DetailPanel({
-  employee,
-  onClose,
-  onAssign,
-}: {
-  employee: Employee;
-  onClose: () => void;
-  onAssign: () => void;
-}) {
-  const { eval360Sessions, eval360Assignments, threeSixty } = useEvaluationStore();
-  const [activeTab, setActiveTab] = useState<'estado' | 'resultados'>('estado');
-
-  const sessions = eval360Sessions
-    .filter(s => s.targetEmployeeId === employee.id)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-
-  const lastSession = sessions[0] ?? null;
-
-  const overallScore = computeOverallScore(employee.id, threeSixty);
-
-  const TABS = [
-    { id: 'estado' as const, label: 'Estado', icon: <Clock size={13} /> },
-    { id: 'resultados' as const, label: 'Resultados', icon: <BarChart3 size={13} /> },
-  ];
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden flex flex-col h-full">
-      {/* Header */}
-      <div className="p-5 bg-gradient-to-br from-slate-50 to-gray-100 shrink-0">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-slate-200 flex items-center justify-center text-base font-bold text-slate-700 shrink-0">
-              {employee.avatar}
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-gray-900">{employee.name}</h3>
-              <p className="text-xs text-gray-600">{employee.position}</p>
-              <p className="text-xs text-gray-400">{employee.department}</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-7 h-7 rounded-full bg-white/70 hover:bg-white flex items-center justify-center text-gray-500"
-          >
-            <X size={14} />
-          </button>
-        </div>
-
-        {/* KPIs rápidos */}
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bg-white/60 rounded-xl p-2.5 text-center backdrop-blur-sm">
-            <div className="text-xs text-gray-500 mb-0.5">Evaluaciones</div>
-            <div className="text-lg font-black text-gray-900">{sessions.length}</div>
-          </div>
-          <div className="bg-white/60 rounded-xl p-2.5 text-center backdrop-blur-sm">
-            <div className="text-xs text-gray-500 mb-0.5">Último período</div>
-            {lastSession ? (
-              <div className="text-xs font-black text-gray-700 leading-tight">{lastSession.period}</div>
-            ) : (
-              <div className="text-sm font-black text-gray-300">—</div>
-            )}
-          </div>
-          <div className="bg-white/60 rounded-xl p-2.5 text-center backdrop-blur-sm">
-            <div className="text-xs text-gray-500 mb-0.5">Puntaje</div>
-            {overallScore !== null ? (
-              <div className={`text-sm font-black ${getScoreColor(overallScore)}`}>{overallScore.toFixed(2)}</div>
-            ) : (
-              <div className="text-sm font-black text-gray-300">—</div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Nueva evaluación */}
-      <div className="px-4 pt-3 pb-0 shrink-0">
-        <button
-          type="button"
-          onClick={onAssign}
-          className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-800 text-white text-xs font-semibold hover:bg-slate-700 transition-colors"
-        >
-          <UserPlus size={13} />
-          Nueva evaluación 360
-        </button>
-      </div>
-
-      {!lastSession ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <BarChart2 size={28} className="text-gray-200 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-gray-400">Sin evaluaciones aún</p>
-          <p className="text-xs text-gray-400 mt-1">Crea la primera evaluación 360 para este colaborador.</p>
-        </div>
-      ) : (
-        <>
-          {/* Tabs */}
-          <div className="flex gap-1 p-2 bg-gray-50 border-b border-gray-100 mt-3 shrink-0">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  activeTab === tab.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Nombre de sesión */}
-          <div className="px-4 pt-3 pb-1 shrink-0">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Última evaluación</p>
-            <p className="text-xs font-bold text-gray-800 truncate mt-0.5">{lastSession.name}</p>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto">
-            {activeTab === 'estado' && (
-              <div className="p-4">
-                <Eval360SessionStatusView
-                  session={lastSession}
-                  onBack={() => {}}
-                  embedded
-                />
-              </div>
-            )}
-            {activeTab === 'resultados' && (
-              <div className="p-4">
-                <Eval360SessionResultsView
-                  session={lastSession}
-                  onBack={() => {}}
-                  embedded
-                />
-              </div>
-            )}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
 function Eval360AdminView() {
   const { eval360Assignments, threeSixty } = useEvaluationStore();
+  const [activeTab, setActiveTab] = useState<'colaboradores' | 'resultados'>('colaboradores');
   const [search, setSearch] = useState('');
   const [filterArea, setFilterArea] = useState('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -800,117 +571,137 @@ function Eval360AdminView() {
 
   const selectedEmployee = selectedId ? EMPLOYEES.find(e => e.id === selectedId) ?? null : null;
 
-  const totalCompleted = EMPLOYEES.filter(e => {
-    const a = eval360Assignments.filter(x => x.targetEmployeeId === e.id);
-    return a.length > 0 && a.every(x => x.completedAt);
-  }).length;
-  const totalPending = EMPLOYEES.filter(e => {
-    const a = eval360Assignments.filter(x => x.targetEmployeeId === e.id);
-    return a.length > 0 && !a.every(x => x.completedAt);
-  }).length;
-  const empScores = EMPLOYEES.map(e => computeOverallScore(e.id, threeSixty)).filter((s): s is number => s !== null);
-  const overallAvg = empScores.length > 0 ? empScores.reduce((a, b) => a + b, 0) / empScores.length : null;
+  const TABS = [
+    { id: 'colaboradores' as const, label: 'Colaboradores', icon: <Users size={15} /> },
+    { id: 'resultados' as const, label: 'Resultados globales', icon: <BarChart3 size={15} /> },
+  ];
 
   return (
     <div className="space-y-5">
-      {/* KPI cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-            <CheckCircle2 size={16} className="text-emerald-600" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Completos</p>
-            <p className="text-xl font-black text-gray-900">{totalCompleted}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">evaluaciones finalizadas</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
-            <AlertCircle size={16} className="text-amber-500" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Pendientes</p>
-            <p className="text-xl font-black text-gray-900">{totalPending}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">en proceso o sin responder</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-            <BarChart2 size={16} className="text-blue-600" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Promedio general</p>
-            <p className={`text-xl font-black ${overallAvg ? getScoreColor(overallAvg) : 'text-gray-300'}`}>
-              {overallAvg ? overallAvg.toFixed(2) : '—'}
-            </p>
-            {overallAvg && (
-              <span className={`mt-0.5 inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${getScoreBg(overallAvg)}`}>
-                {getClassificationLabel(overallAvg)}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Search + filter bar */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Buscar colaborador..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 transition-all"
-            />
-          </div>
-          <div className="relative">
-            <select
-              value={filterArea}
-              onChange={e => setFilterArea(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 text-gray-700 cursor-pointer transition-all"
+      {/* Tabs */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="flex border-b border-gray-100">
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-5 py-3.5 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
             >
-              <option value="all">Todas las áreas</option>
-              {areas.map(a => <option key={a} value={a}>{a}</option>)}
-            </select>
-            <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          </div>
-          <span className="text-xs text-gray-400 ml-auto">{filtered.length} colaborador{filtered.length !== 1 ? 'es' : ''}</span>
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
         </div>
-      </div>
 
-      {/* Two-column layout: list + detail panel */}
-      <div className={`grid gap-5 transition-all ${selectedEmployee ? 'grid-cols-1 lg:grid-cols-[1fr_1.4fr]' : 'grid-cols-1'}`}>
-        {/* Left: employee cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 content-start">
-          {filtered.length === 0 ? (
-            <div className="col-span-full bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-sm text-gray-400">
-              No se encontraron colaboradores con los filtros actuales.
+        <div className="p-5">
+          {activeTab === 'resultados' && <GlobalResults360 />}
+
+          {activeTab === 'colaboradores' && (
+            <div className="space-y-4">
+              {/* Search + filter */}
+              <div className="flex flex-wrap gap-3 items-center">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Buscar colaborador..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 transition-all"
+                  />
+                </div>
+                <div className="relative">
+                  <select
+                    value={filterArea}
+                    onChange={e => setFilterArea(e.target.value)}
+                    className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 text-gray-700 cursor-pointer transition-all"
+                  >
+                    <option value="all">Todas las áreas</option>
+                    {areas.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                  <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+                <span className="text-xs text-gray-400 ml-auto">{filtered.length} colaborador{filtered.length !== 1 ? 'es' : ''}</span>
+              </div>
+
+              {/* Two-column layout */}
+              <div className={`grid gap-5 ${selectedEmployee ? 'grid-cols-1 lg:grid-cols-[1fr_1.4fr]' : 'grid-cols-1'}`}>
+                {/* Left: employee cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 content-start">
+                  {filtered.length === 0 ? (
+                    <div className="col-span-full py-10 text-center text-sm text-gray-400">
+                      No se encontraron colaboradores.
+                    </div>
+                  ) : (
+                    filtered.map(emp => (
+                      <EmployeeCard360
+                        key={emp.id}
+                        employee={emp}
+                        isSelected={selectedId === emp.id}
+                        onSelect={() => {
+                          setSelectedId(selectedId === emp.id ? null : emp.id);
+                          setShowAssignModalFor(null);
+                        }}
+                      />
+                    ))
+                  )}
+                </div>
+
+                {/* Right: detail panel */}
+                {selectedEmployee && (
+                  <div className="lg:sticky lg:top-6 lg:self-start overflow-hidden" style={{ maxHeight: 'calc(100vh - 12rem)' }}>
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 12rem)' }}>
+                      {/* Panel header */}
+                      <div
+                        className="p-5 shrink-0"
+                        style={{ background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)' }}
+                      >
+                        <div className="flex items-start justify-between mb-1">
+                          <div className="flex items-start gap-3">
+                            <div className="w-11 h-11 rounded-2xl bg-slate-200 flex items-center justify-center text-sm font-bold text-slate-700 shrink-0">
+                              {selectedEmployee.avatar}
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-bold text-gray-900">{selectedEmployee.name}</h3>
+                              <p className="text-xs text-gray-600">{selectedEmployee.position}</p>
+                              <p className="text-xs text-gray-400">{selectedEmployee.department}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setShowAssignModalFor(selectedEmployee)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold hover:bg-slate-700 transition-colors"
+                            >
+                              <UserPlus size={12} />
+                              Asignar
+                            </button>
+                            <button
+                              onClick={() => setSelectedId(null)}
+                              className="w-7 h-7 rounded-full bg-white/70 hover:bg-white flex items-center justify-center text-gray-500"
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Scrollable content */}
+                      <div className="flex-1 overflow-y-auto p-4">
+                        <ResumenTab employee={selectedEmployee} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          ) : (
-            filtered.map(emp => (
-              <Employee360Card
-                key={emp.id}
-                employee={emp}
-                isSelected={selectedId === emp.id}
-                onSelect={() => setSelectedId(selectedId === emp.id ? null : emp.id)}
-              />
-            ))
           )}
         </div>
-
-        {/* Right: detail panel */}
-        {selectedEmployee && (
-          <div className="lg:sticky lg:top-6 lg:self-start" style={{ maxHeight: 'calc(100vh - 8rem)', overflowY: 'hidden' }}>
-            <Employee360DetailPanel
-              employee={selectedEmployee}
-              onClose={() => setSelectedId(null)}
-              onAssign={() => setShowAssignModalFor(selectedEmployee)}
-            />
-          </div>
-        )}
       </div>
 
       {showAssignModalFor && (
