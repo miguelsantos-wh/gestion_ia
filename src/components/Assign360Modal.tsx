@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import {
   X, Users, User, Briefcase, Equal, UserCheck, Globe, Copy, Check,
   ChevronRight, Calendar, FileText, AlertTriangle, Info, Plus, Trash2,
@@ -177,6 +177,9 @@ function EmployeePicker({
 }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
 
   const options = EMPLOYEES.filter(
     e => !exclude.includes(e.id) && (
@@ -188,29 +191,79 @@ function EmployeePicker({
 
   const selected = EMPLOYEES.find(e => e.id === value);
 
+  // Position dropdown using fixed so it escapes overflow:hidden containers
+  useEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const dropH = 280;
+
+    if (spaceBelow >= dropH || spaceBelow >= spaceAbove) {
+      setDropdownStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999,
+      });
+    } else {
+      setDropdownStyle({
+        position: 'fixed',
+        bottom: window.innerHeight - rect.top + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999,
+      });
+    }
+  }, [open]);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+        setQuery('');
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
   return (
     <div className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-xl text-sm hover:border-gray-300 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white"
+        className="w-full flex items-center gap-2 px-3 py-2.5 border border-gray-200 rounded-xl hover:border-gray-300 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white min-h-[40px]"
       >
         {selected ? (
           <>
-            <div className="w-6 h-6 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold flex items-center justify-center shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold flex items-center justify-center shrink-0">
               {selected.avatar}
             </div>
-            <span className="flex-1 text-left text-gray-800 font-medium text-xs truncate">{selected.name}</span>
-            <span className="text-[10px] text-gray-400 shrink-0 truncate max-w-[100px]">{selected.position}</span>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-xs font-semibold text-gray-800 truncate leading-tight">{selected.name}</p>
+              <p className="text-[10px] text-gray-400 truncate leading-tight">{selected.position}</p>
+            </div>
           </>
         ) : (
           <span className="text-gray-400 text-xs flex-1 text-left">{placeholder}</span>
         )}
-        <ChevronRight size={12} className="text-gray-300 shrink-0 rotate-90" />
+        <ChevronRight size={13} className={`text-gray-300 shrink-0 transition-transform ${open ? '-rotate-90' : 'rotate-90'}`} />
       </button>
 
       {open && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+        <div
+          ref={dropdownRef}
+          style={dropdownStyle}
+          className="bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden"
+        >
           <div className="p-2 border-b border-gray-100">
             <div className="flex items-center gap-2 px-2 py-1.5 bg-gray-50 rounded-lg">
               <Search size={12} className="text-gray-400 shrink-0" />
@@ -224,33 +277,34 @@ function EmployeePicker({
               />
             </div>
           </div>
-          <div className="max-h-48 overflow-y-auto">
+          <div className="max-h-52 overflow-y-auto">
             {value && (
               <button
                 type="button"
                 onClick={() => { onChange(''); setOpen(false); setQuery(''); }}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-xs text-gray-400 border-b border-gray-50"
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-50 text-xs text-red-400 border-b border-gray-50 transition-colors"
               >
                 <X size={11} /> Quitar selección
               </button>
             )}
             {options.length === 0 ? (
-              <p className="text-center text-xs text-gray-400 py-4">Sin resultados</p>
+              <p className="text-center text-xs text-gray-400 py-5">Sin resultados</p>
             ) : (
               options.map(e => (
                 <button
                   key={e.id}
                   type="button"
                   onClick={() => { onChange(e.id); setOpen(false); setQuery(''); }}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-gray-50 transition-colors text-left ${value === e.id ? 'bg-blue-50' : ''}`}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-blue-50 transition-colors text-left ${value === e.id ? 'bg-blue-50' : ''}`}
                 >
-                  <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold flex items-center justify-center shrink-0">
                     {e.avatar}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-gray-800 truncate">{e.name}</p>
                     <p className="text-[10px] text-gray-400 truncate">{e.position} · {e.department}</p>
                   </div>
+                  {value === e.id && <Check size={12} className="text-blue-500 shrink-0" />}
                 </button>
               ))
             )}

@@ -631,34 +631,43 @@ function PdiSection({
                       </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      {/* Status selector as styled badge */}
-                      <div className="relative group">
-                        <select
-                          value={item.status}
-                          onChange={e => onUpdate(idx, 'status', e.target.value)}
-                          className={`appearance-none text-[11px] font-bold pl-3 pr-6 py-1.5 rounded-full border-2 cursor-pointer focus:outline-none transition-all ${statusCfg.badgeBg}`}
-                          style={{
-                            color: statusCfg.accentDark,
-                            borderColor: statusCfg.accentDark,
-                          }}
-                        >
-                          <option value="pendiente">Pendiente</option>
-                          <option value="en_progreso">En progreso</option>
-                          <option value="completado">Completado</option>
-                        </select>
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: statusCfg.accentDark }}>
-                          <svg width="8" height="5" viewBox="0 0 8 5" fill="none"><path d="M1 1l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                        </div>
+                      {/* Status pills */}
+                      <div className="flex items-center gap-1 p-0.5 bg-white/60 rounded-full border border-black/10">
+                        {(Object.entries(STATUS_CONFIG) as [string, typeof STATUS_CONFIG[keyof typeof STATUS_CONFIG]][]).map(([key, cfg]) => {
+                          const active = item.status === key;
+                          const icons: Record<string, React.ReactNode> = {
+                            pendiente: <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><circle cx="4.5" cy="4.5" r="3.5" stroke="currentColor" strokeWidth="1.3"/></svg>,
+                            en_progreso: <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M4.5 1.5v3l2 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="4.5" cy="4.5" r="3.5" stroke="currentColor" strokeWidth="1.3"/></svg>,
+                            completado: <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M2 4.5l2 2 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="4.5" cy="4.5" r="3.5" stroke="currentColor" strokeWidth="1.3"/></svg>,
+                          };
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() => onUpdate(idx, 'status', key)}
+                              title={cfg.label}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all duration-200"
+                              style={active ? {
+                                background: cfg.barColor,
+                                color: '#fff',
+                                boxShadow: `0 2px 8px ${cfg.barColor}60`,
+                              } : {
+                                background: 'transparent',
+                                color: cfg.barColor,
+                              }}
+                            >
+                              {icons[key]}
+                              <span className={active ? 'inline' : 'hidden sm:inline'}>{cfg.label}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                       <button
                         type="button"
                         onClick={() => onRemove(idx)}
-                        className="w-6 h-6 rounded-lg flex items-center justify-center transition-all hover:scale-110"
-                        style={{ color: statusCfg.accentDark, background: 'rgba(255,0,0,0)' }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,0,0,0)'}
+                        className="w-6 h-6 rounded-lg flex items-center justify-center transition-all hover:scale-110 hover:bg-red-50"
                       >
-                        <Trash2 size={13} className="text-red-500" />
+                        <Trash2 size={13} className="text-red-400" />
                       </button>
                     </div>
                   </div>
