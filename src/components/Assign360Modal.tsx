@@ -450,14 +450,14 @@ function ExistingSessionPanel({
   targetEmployee,
   copiedId,
   onCopy,
-  onCopyAll,
+  onDelete,
 }: {
   session: Evaluation360Session;
   assignments: Eval360Assignment[];
   targetEmployee: Employee;
   copiedId: string | null;
   onCopy: (link: string, id: string) => void;
-  onCopyAll: () => void;
+  onDelete: (sessionId: string) => void;
 }) {
   const periodLabel = EVAL_360_PERIODS.find(p => p.value === session.period)?.label ?? session.period;
   const completed = assignments.filter(a => !!a.completedAt).length;
@@ -574,6 +574,20 @@ function ExistingSessionPanel({
         </div>
       )}
 
+      {/* Empty session: offer deletion */}
+      {assignments.length === 0 && (
+        <div className="px-4 py-3 bg-red-50 border-t border-amber-100 flex items-center justify-between gap-3">
+          <p className="text-[11px] text-red-600 leading-relaxed">Esta evaluación no tiene evaluadores asignados. Puedes eliminarla para crear una nueva.</p>
+          <button
+            type="button"
+            onClick={() => onDelete(session.id)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-semibold shrink-0 transition-colors"
+          >
+            <Trash2 size={11} /> Eliminar
+          </button>
+        </div>
+      )}
+
       {/* Copy all footer */}
       {assignments.length > 0 && (
         <div className="px-4 py-2.5 bg-gray-50 border-t border-amber-100 flex items-center justify-between">
@@ -594,7 +608,7 @@ function ExistingSessionPanel({
 /* ─── Main component ─────────────────────────────────────────────────────────── */
 
 export default function Assign360Modal({ targetEmployee, onClose }: Assign360ModalProps) {
-  const { createEval360Session, saveEval360Assignment, eval360Assignments, eval360Sessions, hasPeriodConflict } = useEvaluationStore();
+  const { createEval360Session, saveEval360Assignment, eval360Assignments, eval360Sessions, hasPeriodConflict, removeEval360Session } = useEvaluationStore();
 
   const [step, setStep] = useState<Step>('config');
 
@@ -795,7 +809,7 @@ export default function Assign360Modal({ targetEmployee, onClose }: Assign360Mod
                   targetEmployee={targetEmployee}
                   copiedId={copiedId}
                   onCopy={handleCopy}
-                  onCopyAll={handleCopyAll}
+                  onDelete={removeEval360Session}
                 />
               )}
               {periodConflict && !existingSession && (

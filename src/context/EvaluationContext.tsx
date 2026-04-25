@@ -74,18 +74,26 @@ function loadStorage(): EvaluationStorage {
     const rawSessions = p.eval360Sessions ?? [];
     const { assignments: migratedAssignments, sessions: migratedSessions } = migrateLegacyAssignments(rawAssignments, rawSessions);
 
+    // Drop sessions that have no assignments (abandoned config-only sessions)
+    const assignedSessionIds = new Set(migratedAssignments.map(a => a.sessionId));
+    const cleanSessions = migratedSessions.filter(s => assignedSessionIds.has(s.id));
+
     const storage: EvaluationStorage = {
       threeSixty: p.threeSixty ?? {},
       percepcion: p.percepcion ?? {},
       autoPercepcion: p.autoPercepcion ?? {},
       assignments: p.assignments ?? [],
       eval360Assignments: migratedAssignments,
-      eval360Sessions: migratedSessions,
+      eval360Sessions: cleanSessions,
       pdiItems: p.pdiItems ?? {},
     };
 
-    // Persist the migration immediately so it's not re-run on every load
-    if (migratedSessions.length > rawSessions.length || migratedAssignments.some((a, i) => a.sessionId !== rawAssignments[i]?.sessionId)) {
+    // Persist if anything changed (migration or cleanup)
+    if (
+      migratedSessions.length > rawSessions.length ||
+      cleanSessions.length < migratedSessions.length ||
+      migratedAssignments.some((a, i) => a.sessionId !== rawAssignments[i]?.sessionId)
+    ) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(storage));
     }
 
