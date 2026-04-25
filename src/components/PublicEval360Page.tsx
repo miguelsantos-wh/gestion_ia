@@ -46,13 +46,22 @@ interface PublicEval360PageProps {
 export default function PublicEval360Page({ routeHash }: PublicEval360PageProps) {
   const fullHash = effectiveLocationHash(routeHash);
   const { employeeId, mode, assignmentId, role, sessionName, sessionDescription } = useMemo(() => parseEval360Hash(fullHash), [fullHash]);
-  const { saveSelfEvaluation, savePeerEvaluation, completeEval360Assignment } = useEvaluationStore();
+  const { saveSelfEvaluation, savePeerEvaluation, completeEval360Assignment, eval360Assignments } = useEvaluationStore();
   const template = getTemplateById(DEFAULT_360_TEMPLATE_ID)!;
   const employee = EMPLOYEES.find((e) => e.id === employeeId);
 
+  // Resolve assignment and whether we should ask for a name
+  const assignment = assignmentId ? eval360Assignments.find(a => a.id === assignmentId) ?? null : null;
+  const isAnonymousLink = role === 'anonymous';
+  // For non-anonymous peer links, use the evaluator name from the assignment
+  const assignedName = (!isAnonymousLink && assignment) ? assignment.evaluatorName : '';
+
   const [values, setValues] = useState<(number | null)[]>(() => Array(template.items.length).fill(null));
-  const [evaluatorName, setEvaluatorName] = useState('');
+  const [anonymousName, setAnonymousName] = useState('');
   const [done, setDone] = useState(false);
+
+  // The name used when saving
+  const evaluatorName = isAnonymousLink ? (anonymousName.trim() || 'Anónimo') : assignedName;
 
   const setVal = (index: number, value: number) => {
     setValues((prev) => {
@@ -198,15 +207,17 @@ export default function PublicEval360Page({ routeHash }: PublicEval360PageProps)
           </div>
         </div>
 
-        {/* Evaluator name input for non-self */}
-        {mode === 'peer' && (
+        {/* Name field: only for anonymous links */}
+        {isAnonymousLink && (
           <div className="bg-white rounded-2xl border border-gray-200 p-5">
-            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide block mb-2">Tu nombre completo</label>
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide block mb-2">
+              Tu nombre <span className="text-gray-400 font-normal normal-case">(opcional)</span>
+            </label>
             <input
               type="text"
-              value={evaluatorName}
-              onChange={(e) => setEvaluatorName(e.target.value)}
-              placeholder="Nombre y apellido"
+              value={anonymousName}
+              onChange={(e) => setAnonymousName(e.target.value)}
+              placeholder="Puedes dejarlo en blanco para responder de forma anónima"
               className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
             />
           </div>
@@ -248,7 +259,7 @@ export default function PublicEval360Page({ routeHash }: PublicEval360PageProps)
           <div className="flex gap-3">
             <button
               type="button"
-              disabled={!complete || (mode === 'peer' && !evaluatorName.trim())}
+              disabled={!complete}
               onClick={submit}
               className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
             >
@@ -263,10 +274,6 @@ export default function PublicEval360Page({ routeHash }: PublicEval360PageProps)
               Cancelar
             </button>
           </div>
-
-          {mode === 'peer' && !evaluatorName.trim() && complete && (
-            <p className="text-xs text-amber-600 text-center mt-2">Ingresa tu nombre para poder enviar.</p>
-          )}
         </div>
       </div>
     </div>
