@@ -75,17 +75,21 @@ export default function Eval360SessionStatusView({ session, onBack, embedded }: 
   const daysLeft = daysUntil(session.dueDate);
   const overdue = daysLeft < 0;
 
-  /* Overall score for completed assignments that have scores */
+  /* Overall score scoped to this session's completed assignments only */
   const overallScore = useMemo(() => {
     const data = threeSixty[session.targetEmployeeId];
     if (!data) return null;
     const all: number[][] = [];
-    if (data.self) all.push(data.self);
-    data.peers.forEach(p => { if (p.scores.length > 0) all.push(p.scores); });
+    const sessionCompleted = assignments.filter(a => a.completedAt);
+    if (sessionCompleted.find(a => a.role === 'self') && data.self) all.push(data.self);
+    sessionCompleted.filter(a => a.role !== 'self').forEach(a => {
+      const peer = data.peers.find(p => p.evaluatorName.trim().toLowerCase() === a.evaluatorName.trim().toLowerCase() && p.scores.length > 0);
+      if (peer) all.push(peer.scores);
+    });
     if (all.length === 0) return null;
     const total = all.reduce((sum, s) => sum + s.reduce((a, b) => a + b, 0) / s.length, 0);
     return total / all.length;
-  }, [threeSixty, session.targetEmployeeId]);
+  }, [threeSixty, session.targetEmployeeId, assignments]);
 
   const handleCopy = (assignmentId: string, empId: string, role: Eval360Role) => {
     const params: Record<string, string> = {

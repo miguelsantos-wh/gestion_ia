@@ -73,19 +73,31 @@ export default function Eval360SessionResultsView({ session, onBack, embedded }:
   const template = EVALUATION_360_TEMPLATES.find(t => t.id === session.templateId) ?? EVALUATION_360_TEMPLATES[0];
   const data = threeSixty[session.targetEmployeeId];
 
-  /* Build all submissions */
+  /* Build submissions scoped to this session only */
   const allSubmissions = useMemo(() => {
     if (!data) return [];
     const subs: { label: string; role: Eval360Role; scores: number[] }[] = [];
-    if (data.self) subs.push({ label: employee?.name ?? 'Auto', role: 'self', scores: data.self });
-    data.peers.forEach(p => {
-      if (p.scores.length > 0) {
-        const a = assignments.find(x => x.evaluatorName.trim().toLowerCase() === p.evaluatorName.trim().toLowerCase() && x.role !== 'self');
-        subs.push({ label: p.evaluatorName || 'Evaluador', role: (a?.role ?? 'peer') as Eval360Role, scores: p.scores });
-      }
-    });
+
+    // Self: only include if there's a completed self-assignment in this session
+    const selfAssignment = completedAssignments.find(a => a.role === 'self');
+    if (selfAssignment && data.self) {
+      subs.push({ label: employee?.name ?? 'Auto', role: 'self', scores: data.self });
+    }
+
+    // Peers: only include those whose names match a completed assignment of this session
+    completedAssignments
+      .filter(a => a.role !== 'self')
+      .forEach(a => {
+        const peer = data.peers.find(
+          p => p.scores.length > 0 && p.evaluatorName.trim().toLowerCase() === a.evaluatorName.trim().toLowerCase()
+        );
+        if (peer) {
+          subs.push({ label: peer.evaluatorName || 'Evaluador', role: a.role as Eval360Role, scores: peer.scores });
+        }
+      });
+
     return subs;
-  }, [data, assignments, employee]);
+  }, [data, completedAssignments, employee]);
 
   /* Competency averages (all respondents) */
   const competencyScores = useMemo(() => {

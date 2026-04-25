@@ -336,222 +336,6 @@ function ResumenTab({ employee }: { employee: Employee }) {
   );
 }
 
-
-function GlobalResults360() {
-  const { threeSixty, eval360Assignments } = useEvaluationStore();
-  const [sortBy, setSortBy] = useState<'name' | 'score' | 'completion'>('score');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  const rows = useMemo(() => {
-    return EMPLOYEES.map(emp => {
-      const data = threeSixty[emp.id];
-      const assignments = eval360Assignments.filter(a => a.targetEmployeeId === emp.id);
-      const completed = assignments.filter(a => a.completedAt).length;
-      const total = assignments.length;
-      const overallScore = computeOverallScore(emp.id, threeSixty);
-      const respondents = (data?.self ? 1 : 0) + (data?.peers?.length ?? 0);
-
-      let competencyScores: { name: string; avg: number }[] | null = null;
-      if (data) {
-        const allSubs: number[][] = [];
-        if (data.self) allSubs.push(data.self);
-        (data.peers ?? []).forEach(p => { if (p.scores.length > 0) allSubs.push(p.scores); });
-        if (allSubs.length > 0) {
-          competencyScores = COMPETENCY_NAMES.map((name, idx) => {
-            const vals = allSubs.map(s => s[idx] ?? 0).filter(v => v > 0);
-            return { name, avg: vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0 };
-          });
-        }
-      }
-
-      return { emp, overallScore, respondents, completed, total, competencyScores };
-    });
-  }, [threeSixty, eval360Assignments]);
-
-  const sorted = useMemo(() => {
-    const copy = [...rows];
-    copy.sort((a, b) => {
-      let diff = 0;
-      if (sortBy === 'name') diff = a.emp.name.localeCompare(b.emp.name);
-      else if (sortBy === 'score') diff = (a.overallScore ?? -1) - (b.overallScore ?? -1);
-      else if (sortBy === 'completion') diff = (a.total > 0 ? a.completed / a.total : -1) - (b.total > 0 ? b.completed / b.total : -1);
-      return sortDir === 'desc' ? -diff : diff;
-    });
-    return copy;
-  }, [rows, sortBy, sortDir]);
-
-  const toggleSort = (col: typeof sortBy) => {
-    if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortBy(col); setSortDir('desc'); }
-  };
-
-  const SortIcon = ({ col }: { col: typeof sortBy }) => {
-    if (sortBy !== col) return <ChevronDown size={12} className="text-gray-300" />;
-    return sortDir === 'desc' ? <ChevronDown size={12} className="text-gray-600" /> : <ChevronUp size={12} className="text-gray-600" />;
-  };
-
-  const withData = rows.filter(r => r.overallScore !== null).length;
-  const avgScore = withData > 0
-    ? rows.filter(r => r.overallScore !== null).reduce((s, r) => s + r.overallScore!, 0) / withData
-    : null;
-
-  return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-            <BarChart3 size={16} className="text-blue-600" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Con resultados</p>
-            <p className="text-xl font-black text-gray-900">{withData}</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
-            <Award size={16} className="text-green-600" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Promedio general</p>
-            <p className={`text-xl font-black ${avgScore ? getScoreColor(avgScore) : 'text-gray-300'}`}>
-              {avgScore ? avgScore.toFixed(2) : '—'}
-            </p>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
-            <Users size={16} className="text-slate-600" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Total colaboradores</p>
-            <p className="text-xl font-black text-gray-900">{EMPLOYEES.length}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="bg-gray-50 px-5 py-3 border-b border-gray-100">
-          <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">Comparativo por colaborador</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="px-5 py-3 text-left">
-                  <button type="button" onClick={() => toggleSort('name')} className="flex items-center gap-1 text-xs font-semibold text-gray-600 hover:text-gray-900">
-                    Colaborador <SortIcon col="name" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left">
-                  <button type="button" onClick={() => toggleSort('score')} className="flex items-center gap-1 text-xs font-semibold text-gray-600 hover:text-gray-900">
-                    Puntaje global <SortIcon col="score" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Clasificación</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Respuestas</th>
-                <th className="px-4 py-3 text-left">
-                  <button type="button" onClick={() => toggleSort('completion')} className="flex items-center gap-1 text-xs font-semibold text-gray-600 hover:text-gray-900">
-                    Progreso <SortIcon col="completion" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 w-8" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {sorted.map(({ emp, overallScore, respondents, completed, total, competencyScores }) => {
-                const pct = total > 0 ? (completed / total) * 100 : 0;
-                const isExpanded = expandedId === emp.id;
-                return (
-                  <>
-                    <tr key={emp.id} className="hover:bg-gray-50/60 transition-colors">
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
-                            {emp.avatar}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-gray-900 truncate">{emp.name}</p>
-                            <p className="text-[11px] text-gray-400 truncate">{emp.position}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {overallScore !== null ? (
-                          <div className="flex items-center gap-2">
-                            <span className={`text-base font-black ${getScoreColor(overallScore)}`}>{overallScore.toFixed(2)}</span>
-                            <div className="w-16 bg-gray-100 rounded-full h-1.5">
-                              <div className="h-1.5 rounded-full" style={{ width: `${(overallScore / 5) * 100}%`, backgroundColor: getScoreBar(overallScore) }} />
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-300 font-medium">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {overallScore !== null ? (
-                          <span className={`text-[11px] font-bold px-2 py-1 rounded-full ${getScoreBg(overallScore)}`}>
-                            {getClassificationLabel(overallScore)}
-                          </span>
-                        ) : (
-                          <span className="text-[11px] text-gray-300">Sin datos</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs text-gray-600 font-medium">{respondents}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 bg-gray-100 rounded-full h-1.5">
-                            <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, backgroundColor: pct === 100 ? '#059669' : '#2563eb' }} />
-                          </div>
-                          <span className="text-[11px] text-gray-500">{completed}/{total}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {competencyScores && (
-                          <button
-                            type="button"
-                            onClick={() => setExpandedId(isExpanded ? null : emp.id)}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
-                          >
-                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                    {isExpanded && competencyScores && (
-                      <tr key={`${emp.id}-expanded`} className="bg-slate-50">
-                        <td colSpan={6} className="px-5 py-4">
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                            {competencyScores.map((comp, idx) => (
-                              <div key={idx} className="bg-white rounded-xl border border-gray-100 p-2.5">
-                                <p className="text-[10px] text-gray-500 mb-1 truncate">{comp.name}</p>
-                                <div className="flex items-center gap-1.5">
-                                  <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-                                    <div className="h-1.5 rounded-full" style={{ width: `${(comp.avg / 5) * 100}%`, backgroundColor: getScoreBar(comp.avg) }} />
-                                  </div>
-                                  <span className={`text-[11px] font-bold shrink-0 ${comp.avg > 0 ? getScoreColor(comp.avg) : 'text-gray-300'}`}>
-                                    {comp.avg > 0 ? comp.avg.toFixed(1) : '—'}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 const TEAMS = ['Adminolt', 'CRMInbox', 'Wisphub'];
 
 function EmployeeDetailPanel({
@@ -676,9 +460,31 @@ function EmployeeDetailPanel({
   );
 }
 
+function computeLastSessionScore(
+  employeeId: string,
+  sessions: Evaluation360Session[],
+  assignments: ReturnType<typeof useEvaluationStore>['eval360Assignments'],
+  threeSixty: Record<string, { self?: number[]; peers: { evaluatorName: string; scores: number[] }[] }>
+): number | null {
+  const last = [...sessions]
+    .filter(s => s.targetEmployeeId === employeeId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  if (!last) return null;
+  const data = threeSixty[employeeId];
+  if (!data) return null;
+  const sessionAssignments = assignments.filter(a => a.sessionId === last.id && a.completedAt);
+  const all: number[][] = [];
+  if (sessionAssignments.find(a => a.role === 'self') && data.self) all.push(data.self);
+  sessionAssignments.filter(a => a.role !== 'self').forEach(a => {
+    const peer = data.peers.find(p => p.evaluatorName.trim().toLowerCase() === a.evaluatorName.trim().toLowerCase() && p.scores.length > 0);
+    if (peer) all.push(peer.scores);
+  });
+  if (all.length === 0) return null;
+  return all.reduce((sum, s) => sum + s.reduce((a, b) => a + b, 0) / s.length, 0) / all.length;
+}
+
 function Eval360AdminView() {
   const { eval360Assignments, eval360Sessions, threeSixty } = useEvaluationStore();
-  const [activeTab, setActiveTab] = useState<'colaboradores' | 'resultados'>('colaboradores');
   const [search, setSearch] = useState('');
   const [filterArea, setFilterArea] = useState('all');
   const [filterTeam, setFilterTeam] = useState('all');
@@ -688,7 +494,6 @@ function Eval360AdminView() {
 
   const areas = useMemo(() => Array.from(new Set(EMPLOYEES.map(e => e.department))), []);
 
-  // Periodos disponibles extraídos de las sesiones existentes
   const availablePeriods = useMemo(() => {
     const periods = new Set(eval360Sessions.map(s => s.period));
     return EVAL_360_PERIODS.filter(p => periods.has(p.value));
@@ -700,10 +505,9 @@ function Eval360AdminView() {
         e.name.toLowerCase().includes(search.toLowerCase()) ||
         e.position.toLowerCase().includes(search.toLowerCase());
       const matchArea = filterArea === 'all' || e.department === filterArea;
-      const matchTeam = filterTeam === 'all'; // teams son proyectos, no hay campo en Employee aún — se muestra el filtro pero no excluye
+      const matchTeam = filterTeam === 'all';
       if (!matchSearch || !matchArea || !matchTeam) return false;
       if (filterPeriod !== 'all') {
-        // Mantener solo empleados con al menos una sesión en ese periodo
         const hasPeriod = eval360Sessions.some(s => s.targetEmployeeId === e.id && s.period === filterPeriod);
         if (!hasPeriod) return false;
       }
@@ -713,256 +517,176 @@ function Eval360AdminView() {
 
   const selectedEmployee = selectedId ? EMPLOYEES.find(e => e.id === selectedId) ?? null : null;
 
-  const totalCompleted = EMPLOYEES.filter(e => {
-    const a = eval360Assignments.filter(x => x.targetEmployeeId === e.id);
-    return a.length > 0 && a.every(x => x.completedAt);
-  }).length;
-  const totalPending = EMPLOYEES.filter(e => {
-    const a = eval360Assignments.filter(x => x.targetEmployeeId === e.id);
-    return a.length > 0 && !a.every(x => x.completedAt);
-  }).length;
-  const empScores = EMPLOYEES.map(e => computeOverallScore(e.id, threeSixty)).filter((s): s is number => s !== null);
-  const overallAvg = empScores.length > 0 ? empScores.reduce((a, b) => a + b, 0) / empScores.length : null;
-
-  const TABS = [
-    { id: 'colaboradores' as const, label: 'Colaboradores', icon: <Users size={15} /> },
-    { id: 'resultados' as const, label: 'Resultados globales', icon: <BarChart3 size={15} /> },
-  ];
-
   return (
     <div className="space-y-5">
-      {/* KPI cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-            <CheckCircle2 size={16} className="text-emerald-600" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Completos</p>
-            <p className="text-xl font-black text-gray-900">{totalCompleted}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">evaluaciones finalizadas</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
-            <AlertCircle size={16} className="text-amber-500" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Pendientes</p>
-            <p className="text-xl font-black text-gray-900">{totalPending}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">en proceso o sin responder</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-            <BarChart2 size={16} className="text-blue-600" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Promedio general</p>
-            <p className={`text-xl font-black ${overallAvg ? getScoreColor(overallAvg) : 'text-gray-300'}`}>
-              {overallAvg ? overallAvg.toFixed(2) : '—'}
-            </p>
-            {overallAvg && (
-              <span className={`mt-0.5 inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${getScoreBg(overallAvg)}`}>
-                {getClassificationLabel(overallAvg)}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Main card with tabs */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="flex border-b border-gray-100">
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-3.5 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap gap-3 items-center">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Buscar colaborador..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 transition-all"
+            />
+          </div>
+
+          {/* Área */}
+          <div className="relative">
+            <select
+              value={filterArea}
+              onChange={e => setFilterArea(e.target.value)}
+              className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 text-gray-700 cursor-pointer transition-all"
             >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
+              <option value="all">Todas las áreas</option>
+              {areas.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+            <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
+
+          {/* Equipo */}
+          <div className="relative">
+            <select
+              value={filterTeam}
+              onChange={e => setFilterTeam(e.target.value)}
+              className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 text-gray-700 cursor-pointer transition-all"
+            >
+              <option value="all">Todos los equipos</option>
+              {TEAMS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
+
+          {/* Periodo */}
+          <div className="relative">
+            <select
+              value={filterPeriod}
+              onChange={e => setFilterPeriod(e.target.value)}
+              className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 text-gray-700 cursor-pointer transition-all"
+            >
+              <option value="all">Todos los periodos</option>
+              {availablePeriods.length > 0
+                ? availablePeriods.map(p => <option key={p.value} value={p.value}>{p.label}</option>)
+                : EVAL_360_PERIODS.slice(0, 6).map(p => <option key={p.value} value={p.value}>{p.label}</option>)
+              }
+            </select>
+            <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
+
+          <span className="text-xs text-gray-400 ml-auto">{filtered.length} colaborador{filtered.length !== 1 ? 'es' : ''}</span>
         </div>
 
-        <div className="p-5">
-          {activeTab === 'resultados' && <GlobalResults360 />}
+        {/* Two-column layout */}
+        <div className={`grid ${selectedEmployee ? 'grid-cols-1 lg:grid-cols-[1fr_1.4fr]' : 'grid-cols-1'}`}>
+          {/* Left: table */}
+          <div className={`min-w-0 ${selectedEmployee ? 'border-r border-gray-100' : ''}`}>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/80">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Colaborador</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Área</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Progreso</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Puntaje</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                    <th className="px-4 py-3 w-8" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-10 text-sm text-gray-400">
+                        No se encontraron colaboradores con los filtros actuales.
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map(emp => {
+                      const lastSession = [...eval360Sessions]
+                        .filter(s => s.targetEmployeeId === emp.id)
+                        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;
+                      const sessionAssignments = lastSession
+                        ? eval360Assignments.filter(a => a.sessionId === lastSession.id)
+                        : [];
+                      const completed = sessionAssignments.filter(a => a.completedAt).length;
+                      const total = sessionAssignments.length;
+                      const pct = total > 0 ? (completed / total) * 100 : 0;
+                      const lastScore = computeLastSessionScore(emp.id, eval360Sessions, eval360Assignments, threeSixty);
+                      const isSelected = selectedId === emp.id;
+                      const statusLabel = total === 0 ? 'Sin asignar' : pct === 100 ? 'Completo' : 'En progreso';
+                      const statusCls = total === 0
+                        ? 'bg-gray-100 text-gray-500'
+                        : pct === 100
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-blue-100 text-blue-700';
 
-          {activeTab === 'colaboradores' && (
-            <div className="space-y-4">
-              {/* Filters row */}
-              <div className="flex flex-wrap gap-3 items-center">
-                {/* Search */}
-                <div className="relative flex-1 min-w-[200px]">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  <input
-                    type="text"
-                    placeholder="Buscar colaborador..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 transition-all"
-                  />
-                </div>
+                      return (
+                        <tr
+                          key={emp.id}
+                          className={`transition-colors cursor-pointer ${isSelected ? 'bg-slate-50 ring-1 ring-inset ring-slate-200' : 'hover:bg-gray-50/60'}`}
+                          onClick={() => setSelectedId(isSelected ? null : emp.id)}
+                        >
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
+                                {emp.avatar}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold text-gray-900 truncate">{emp.name}</p>
+                                <p className="text-[11px] text-gray-400 truncate">{emp.position}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <span className="text-xs text-gray-600">{emp.department}</span>
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 bg-gray-100 rounded-full h-1.5">
+                                <div
+                                  className="h-1.5 rounded-full transition-all"
+                                  style={{ width: `${pct}%`, backgroundColor: pct === 100 ? '#059669' : '#2563eb' }}
+                                />
+                              </div>
+                              <span className="text-[11px] text-gray-500 shrink-0">{completed}/{total}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5">
+                            {lastScore !== null ? (
+                              <span className={`text-sm font-black ${getScoreColor(lastScore)}`}>{lastScore.toFixed(2)}</span>
+                            ) : (
+                              <span className="text-sm text-gray-300">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${statusCls}`}>
+                              {statusLabel}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${isSelected ? 'bg-slate-200 text-slate-600' : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500'}`}>
+                              <ChevronRight size={13} className={`transition-transform ${isSelected ? 'rotate-90' : ''}`} />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-                {/* Área */}
-                <div className="relative">
-                  <select
-                    value={filterArea}
-                    onChange={e => setFilterArea(e.target.value)}
-                    className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 text-gray-700 cursor-pointer transition-all"
-                  >
-                    <option value="all">Todas las áreas</option>
-                    {areas.map(a => <option key={a} value={a}>{a}</option>)}
-                  </select>
-                  <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
-
-                {/* Equipo */}
-                <div className="relative">
-                  <select
-                    value={filterTeam}
-                    onChange={e => setFilterTeam(e.target.value)}
-                    className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 text-gray-700 cursor-pointer transition-all"
-                  >
-                    <option value="all">Todos los equipos</option>
-                    {TEAMS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
-
-                {/* Periodo */}
-                <div className="relative">
-                  <select
-                    value={filterPeriod}
-                    onChange={e => setFilterPeriod(e.target.value)}
-                    className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 text-gray-700 cursor-pointer transition-all"
-                  >
-                    <option value="all">Todos los periodos</option>
-                    {availablePeriods.length > 0
-                      ? availablePeriods.map(p => <option key={p.value} value={p.value}>{p.label}</option>)
-                      : EVAL_360_PERIODS.slice(0, 6).map(p => <option key={p.value} value={p.value}>{p.label}</option>)
-                    }
-                  </select>
-                  <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
-
-                <span className="text-xs text-gray-400 ml-auto">{filtered.length} colaborador{filtered.length !== 1 ? 'es' : ''}</span>
-              </div>
-
-              {/* Two-column layout: table left, detail panel right */}
-              <div className={`grid gap-5 ${selectedEmployee ? 'grid-cols-1 lg:grid-cols-[1fr_1.4fr]' : 'grid-cols-1'}`}>
-                {/* Left: employee table */}
-                <div className="min-w-0">
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b border-gray-100 bg-gray-50/80">
-                            <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Colaborador</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Área</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Progreso</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Puntaje</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
-                            <th className="px-4 py-3 w-8" />
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                          {filtered.length === 0 ? (
-                            <tr>
-                              <td colSpan={6} className="text-center py-10 text-sm text-gray-400">
-                                No se encontraron colaboradores con los filtros actuales.
-                              </td>
-                            </tr>
-                          ) : (
-                            filtered.map(emp => {
-                              const assignments = eval360Assignments.filter(a => a.targetEmployeeId === emp.id);
-                              const completed = assignments.filter(a => a.completedAt).length;
-                              const total = assignments.length;
-                              const pct = total > 0 ? (completed / total) * 100 : 0;
-                              const overallScore = computeOverallScore(emp.id, threeSixty);
-                              const isSelected = selectedId === emp.id;
-                              const statusLabel = total === 0 ? 'Sin asignar' : pct === 100 ? 'Completo' : 'En progreso';
-                              const statusCls = total === 0
-                                ? 'bg-gray-100 text-gray-500'
-                                : pct === 100
-                                  ? 'bg-emerald-100 text-emerald-700'
-                                  : 'bg-blue-100 text-blue-700';
-
-                              return (
-                                <tr
-                                  key={emp.id}
-                                  className={`transition-colors cursor-pointer ${isSelected ? 'bg-slate-50 ring-1 ring-inset ring-slate-200' : 'hover:bg-gray-50/60'}`}
-                                  onClick={() => setSelectedId(isSelected ? null : emp.id)}
-                                >
-                                  <td className="px-5 py-3.5">
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
-                                        {emp.avatar}
-                                      </div>
-                                      <div className="min-w-0">
-                                        <p className="text-sm font-semibold text-gray-900 truncate">{emp.name}</p>
-                                        <p className="text-[11px] text-gray-400 truncate">{emp.position}</p>
-                                      </div>
-                                    </div>
-                                  </td>
-                                  <td className="px-4 py-3.5">
-                                    <span className="text-xs text-gray-600">{emp.department}</span>
-                                  </td>
-                                  <td className="px-4 py-3.5">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-16 bg-gray-100 rounded-full h-1.5">
-                                        <div
-                                          className="h-1.5 rounded-full transition-all"
-                                          style={{ width: `${pct}%`, backgroundColor: pct === 100 ? '#059669' : '#2563eb' }}
-                                        />
-                                      </div>
-                                      <span className="text-[11px] text-gray-500 shrink-0">{completed}/{total}</span>
-                                    </div>
-                                  </td>
-                                  <td className="px-4 py-3.5">
-                                    {overallScore !== null ? (
-                                      <span className={`text-sm font-black ${getScoreColor(overallScore)}`}>{overallScore.toFixed(2)}</span>
-                                    ) : (
-                                      <span className="text-sm text-gray-300">—</span>
-                                    )}
-                                  </td>
-                                  <td className="px-4 py-3.5">
-                                    <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${statusCls}`}>
-                                      {statusLabel}
-                                    </span>
-                                  </td>
-                                  <td className="px-4 py-3.5">
-                                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${isSelected ? 'bg-slate-200 text-slate-600' : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500'}`}>
-                                      <ChevronRight size={13} className={`transition-transform ${isSelected ? 'rotate-90' : ''}`} />
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right: session detail panel */}
-                {selectedEmployee && (
-                  <div className="lg:sticky lg:top-6 lg:self-start">
-                    <EmployeeDetailPanel
-                      employee={selectedEmployee}
-                      onClose={() => setSelectedId(null)}
-                      onAssign={() => setShowAssignModalFor(selectedEmployee)}
-                    />
-                  </div>
-                )}
-              </div>
+          {/* Right: session detail panel */}
+          {selectedEmployee && (
+            <div className="p-4 lg:sticky lg:top-0 lg:self-start" style={{ maxHeight: 'calc(100vh - 10rem)', overflowY: 'auto' }}>
+              <EmployeeDetailPanel
+                employee={selectedEmployee}
+                onClose={() => setSelectedId(null)}
+                onAssign={() => setShowAssignModalFor(selectedEmployee)}
+              />
             </div>
           )}
         </div>
