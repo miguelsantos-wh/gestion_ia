@@ -34,6 +34,23 @@ export function isAutoPercepcionHash(hash: string): boolean {
   return p === '/eval-autopercepcion' || p.startsWith('/eval-autopercepcion/');
 }
 
+export function isEmployeeSessionHash(hash: string): boolean {
+  const p = getPathFromLocationHash(hash);
+  return p === '/empleado' || p.startsWith('/empleado/');
+}
+
+export function getEmployeeIdFromHash(hash: string): string | null {
+  const p = getPathFromLocationHash(hash);
+  if (p.startsWith('/empleado/')) {
+    const id = p.slice('/empleado/'.length).split('/')[0];
+    return id || null;
+  }
+  // also support ?employeeId= query param
+  const q = (hash ?? '').split('?')[1] ?? '';
+  const params = new URLSearchParams(q);
+  return params.get('employeeId');
+}
+
 /** Hash efectivo: el del padre o, si viene vacío, el de window (por si el estado de React va detrás). */
 export function effectiveLocationHash(routeHashFromParent: string): string {
   if (typeof window === 'undefined') {

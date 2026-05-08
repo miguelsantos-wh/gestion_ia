@@ -464,18 +464,6 @@ function EmployeeDetailPanel({ employee, onClose }: { employee: Employee; onClos
               <VotesMatrix percList={percList} autoPerc={autoPerc} />
             )}
 
-            {percList.length > 0 && autoPerc && cfg && cfgAuto && (
-              <div className={`rounded-xl p-3 ${cfg.code === cfgAuto.code ? 'bg-emerald-50 border border-emerald-100' : 'bg-amber-50 border border-amber-100'}`}>
-                <p className={`text-xs font-bold mb-1 ${cfg.code === cfgAuto.code ? 'text-emerald-800' : 'text-amber-800'}`}>
-                  {cfg.code === cfgAuto.code ? 'Coincidencia' : 'Brecha de percepción'}
-                </p>
-                <p className={`text-xs leading-relaxed ${cfg.code === cfgAuto.code ? 'text-emerald-700' : 'text-amber-700'}`}>
-                  {cfg.code === cfgAuto.code
-                    ? 'El colaborador coincide con la percepción externa.'
-                    : `Externos: ${cfg.code} (${cfg.label}) · Se evalúa: ${cfgAuto.code} (${cfgAuto.label})`}
-                </p>
-              </div>
-            )}
           </>
         )}
 

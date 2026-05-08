@@ -28,10 +28,12 @@ export interface PeerSubmission {
   evaluatorName: string;
   scores: number[];
   at: string;
+  comment?: string;
 }
 
 export interface Employee360Data {
   self?: number[];
+  selfComment?: string;
   peers: PeerSubmission[];
 }
 
@@ -103,6 +105,7 @@ export interface Eval360Assignment {
   assignedAt: string;
   completedAt?: string;
   scores?: number[];
+  comment?: string;
 }
 
 export type PdiStatus = 'pendiente' | 'en_progreso' | 'completado';

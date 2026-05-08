@@ -4,7 +4,7 @@ import { getTemplateById, DEFAULT_360_TEMPLATE_ID } from '../data/evaluation360T
 import { useEvaluationStore } from '../context/EvaluationContext';
 import Eval360Questionnaire from './Eval360Questionnaire';
 import { effectiveLocationHash } from '../utils/hashRoute';
-import { ClipboardList, CheckCircle, User, Briefcase, Equal, UserCheck, Globe, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ClipboardList, CheckCircle, User, Briefcase, Equal, UserCheck, Globe, Users, MessageSquare } from 'lucide-react';
 import type { Eval360Role } from '../types/evaluation';
 import { EVAL_360_ROLE_LABELS } from '../types/evaluation';
 
@@ -58,6 +58,7 @@ export default function PublicEval360Page({ routeHash }: PublicEval360PageProps)
 
   const [values, setValues] = useState<(number | null)[]>(() => Array(template.items.length).fill(null));
   const [anonymousName, setAnonymousName] = useState('');
+  const [comment, setComment] = useState('');
   const [done, setDone] = useState(false);
 
   // The name used when saving
@@ -79,13 +80,14 @@ export default function PublicEval360Page({ routeHash }: PublicEval360PageProps)
   const submit = () => {
     if (!employee || !complete) return;
     const scores = values as number[];
+    const trimmedComment = comment.trim() || undefined;
     if (mode === 'self') {
-      saveSelfEvaluation(employee.id, scores);
+      saveSelfEvaluation(employee.id, scores, trimmedComment);
     } else {
-      savePeerEvaluation(employee.id, evaluatorName, scores);
+      savePeerEvaluation(employee.id, evaluatorName, scores, trimmedComment);
     }
     if (assignmentId) {
-      completeEval360Assignment(assignmentId, scores);
+      completeEval360Assignment(assignmentId, scores, trimmedComment);
     }
     setDone(true);
   };
@@ -231,6 +233,28 @@ export default function PublicEval360Page({ routeHash }: PublicEval360PageProps)
 
         {/* Questions */}
         <Eval360Questionnaire template={template} values={values} onChange={setVal} />
+
+        {/* Comment */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+              <MessageSquare size={14} className="text-slate-500" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-900">Comentario adicional</p>
+              <p className="text-xs text-gray-400">Opcional — comparte observaciones generales o contexto relevante</p>
+            </div>
+          </div>
+          <textarea
+            value={comment}
+            onChange={e => setComment(e.target.value)}
+            placeholder="Escribe aquí cualquier comentario, fortaleza destacada, área de mejora u observación que no quede capturada en las preguntas anteriores…"
+            rows={4}
+            maxLength={800}
+            className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all text-gray-700 placeholder:text-gray-400 leading-relaxed"
+          />
+          <p className="text-[10px] text-gray-400 text-right mt-1.5">{comment.length}/800</p>
+        </div>
 
         {/* Submit */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">

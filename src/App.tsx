@@ -1,29 +1,32 @@
 import { useLayoutEffect, useState } from 'react';
 import Sidebar, { SidebarView } from './components/Sidebar';
 import DashboardPage from './components/DashboardPage';
-import EmpleadoAPage from './components/EmpleadoAPage';
+import EmpleadoAV2Page from './components/EmpleadoAV2Page';
 import Evaluation360Page from './components/Evaluation360Page';
 import AciertosDesaciertosPage from './components/AciertosDesaciertosPage';
 import TemplatesPage from './components/TemplatesPage';
 import FormShowcasePage from './components/FormShowcasePage';
 import DesignSystemPage from './components/DesignSystemPage';
 import EmployeeListPage from './components/EmployeeListPage';
+import EmployeeEmpleadoAPage from './components/EmployeeEmpleadoAPage';
 import PublicEval360Page from './components/PublicEval360Page';
 import PublicPercepcionPage from './components/PublicPercepcionPage';
 import PublicAutoPercepcionPage from './components/PublicAutoPercepcionPage';
 import MiPercepcionPage from './components/MiPercepcionPage';
+import LoginSelectPage from './components/LoginSelectPage';
 import { isEval360Hash, isPercepcionHash, isAutoPercepcionHash } from './utils/hashRoute';
 import { getPathFromLocationHash } from './utils/hashRoute';
-import { UserProvider } from './context/UserContext';
+import { UserProvider, useUser } from './context/UserContext';
 
 function isMiPercepcionHash(hash: string): boolean {
   const p = getPathFromLocationHash(hash);
   return p === '/mis-resultados' || p.startsWith('/mis-resultados/');
 }
 
-const PAGE_TITLES: Record<SidebarView, { title: string; sub: string }> = {
+const ADMIN_PAGE_TITLES: Record<SidebarView, { title: string; sub: string }> = {
   dashboard: { title: 'Dashboard', sub: 'Panorama general del sistema de evaluaciones' },
-  empleadoA: { title: 'Empleado A', sub: 'Resumen, colaboradores, matriz y resultados' },
+  empleadoAV2: { title: 'Empleado A', sub: 'Vista unificada: resumen, matriz 9-Box y detalle de colaboradores' },
+  miEmpleadoA: { title: 'Empleado A', sub: 'Tu posición en la matriz 9-Box y recomendación de desarrollo' },
   eval360: { title: 'Evaluación 360', sub: 'Asignación, seguimiento y análisis de evaluaciones 360' },
   aciertos: { title: 'Aciertos y Desaciertos', sub: 'Evaluación de fortalezas y áreas de mejora' },
   templates: { title: 'Plantillas de Evaluación', sub: 'Crea y gestiona las plantillas de preguntas para evaluaciones 360' },
@@ -32,23 +35,33 @@ const PAGE_TITLES: Record<SidebarView, { title: string; sub: string }> = {
   empleados: { title: 'Empleados', sub: 'Directorio y perfiles del equipo' },
 };
 
-function MainApp() {
-  const [activeView, setActiveView] = useState<SidebarView>('dashboard');
+const EMPLOYEE_PAGE_TITLES: Partial<Record<SidebarView, { title: string; sub: string }>> = {
+  miEmpleadoA: { title: 'Empleado A', sub: 'Tus percepciones y resultados' },
+  eval360: { title: 'Evaluación 360', sub: 'Tus evaluaciones y resultados' },
+  aciertos: { title: 'Aciertos y Desaciertos', sub: 'Tus fortalezas y áreas de mejora' },
+};
 
-  const { title, sub } = PAGE_TITLES[activeView];
+function MainApp() {
+  const { isAdmin, currentEmployee } = useUser();
+  const defaultView: SidebarView = isAdmin ? 'dashboard' : 'eval360';
+  const [activeView, setActiveView] = useState<SidebarView>(defaultView);
+
+  const pageTitles = isAdmin ? ADMIN_PAGE_TITLES : EMPLOYEE_PAGE_TITLES;
+  const pageInfo = pageTitles[activeView] ?? { title: 'Evaluación 360', sub: 'Tus evaluaciones' };
   const isEmployees = activeView === 'empleados';
   const isDesignSystem = activeView === 'designsystem';
+  const isFullPage = isEmployees || isDesignSystem;
 
   return (
     <div className="flex min-h-screen bg-gray-50 font-sans">
       <Sidebar activeView={activeView} onViewChange={setActiveView} />
 
       <div className="flex-1 lg:ml-64 flex flex-col">
-        {!isEmployees && !isDesignSystem && (
+        {!isFullPage && (
           <header className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm">
             <div className="px-6 py-5">
-              <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-              <p className="text-sm text-gray-600 mt-1">{sub}</p>
+              <h1 className="text-2xl font-bold text-gray-900">{pageInfo.title}</h1>
+              <p className="text-sm text-gray-600 mt-1">{pageInfo.sub}</p>
             </div>
           </header>
         )}
@@ -63,17 +76,28 @@ function MainApp() {
           </div>
         ) : (
           <main className="p-6 max-w-7xl mx-auto w-full">
-            {activeView === 'dashboard' && <DashboardPage />}
-            {activeView === 'empleadoA' && <EmpleadoAPage />}
+            {isAdmin && activeView === 'dashboard' && <DashboardPage />}
+            {isAdmin && activeView === 'empleadoAV2' && <EmpleadoAV2Page />}
+            {activeView === 'miEmpleadoA' && currentEmployee && <EmployeeEmpleadoAPage employeeId={currentEmployee.id} />}
             {activeView === 'eval360' && <Evaluation360Page />}
             {activeView === 'aciertos' && <AciertosDesaciertosPage />}
-            {activeView === 'templates' && <TemplatesPage />}
-            {activeView === 'formulario' && <FormShowcasePage />}
+            {isAdmin && activeView === 'templates' && <TemplatesPage />}
+            {isAdmin && activeView === 'formulario' && <FormShowcasePage />}
           </main>
         )}
       </div>
     </div>
   );
+}
+
+function AuthGate() {
+  const { user } = useUser();
+
+  if (!user) {
+    return <LoginSelectPage />;
+  }
+
+  return <MainApp />;
 }
 
 export default function App() {
@@ -105,7 +129,7 @@ export default function App() {
 
   return (
     <UserProvider>
-      <MainApp />
+      <AuthGate />
     </UserProvider>
   );
 }

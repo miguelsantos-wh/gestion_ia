@@ -1,6 +1,8 @@
 import { Employee } from '../types';
 import { BOX_CONFIGS } from '../data/mockData';
-import { X, Calendar, Briefcase, TrendingUp, Target, Award } from 'lucide-react';
+import { X, Calendar, Briefcase, TrendingUp, Target, Award, Eye, User } from 'lucide-react';
+import { useEvaluationStore } from '../context/EvaluationContext';
+import { deriveBoxFromPerceptions, deriveBoxFromAutoPercepcion } from '../utils/evaluationDerivation';
 
 interface EmployeeDetailProps {
   employee: Employee;
@@ -55,6 +57,14 @@ function GoalBar({ label, progress }: { label: string; progress: number }) {
 }
 
 export default function EmployeeDetail({ employee, onClose, lensLabel }: EmployeeDetailProps) {
+  const { percepcion, autoPercepcion } = useEvaluationStore();
+  const percList = percepcion[employee.id] ?? [];
+  const autoPerc = autoPercepcion[employee.id];
+  const derived = deriveBoxFromPerceptions(percList);
+  const derivedAuto = deriveBoxFromAutoPercepcion(autoPerc);
+  const cfgPerc = derived ? BOX_CONFIGS.find(b => b.performanceLevel === derived.performanceLevel && b.potentialLevel === derived.potentialLevel) : null;
+  const cfgAuto = derivedAuto ? BOX_CONFIGS.find(b => b.performanceLevel === derivedAuto.performanceLevel && b.potentialLevel === derivedAuto.potentialLevel) : null;
+
   const boxConfig = BOX_CONFIGS.find(
     (b) => b.potentialLevel === employee.potentialLevel && b.performanceLevel === employee.performanceLevel
   );
@@ -190,6 +200,59 @@ export default function EmployeeDetail({ employee, onClose, lensLabel }: Employe
             <p className="text-xs text-gray-700 leading-relaxed">{boxConfig?.recommendation}</p>
           </div>
         </div>
+
+        {/* Percepción 9-Box results */}
+        {(percList.length > 0 || autoPerc) && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-3">
+              <Eye size={14} className="text-teal-600" />
+              <h4 className="text-sm font-bold text-gray-800">Resultados 9-Box</h4>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl border-2 p-3" style={{ backgroundColor: cfgPerc ? cfgPerc.bgColor : '#f0fdfa', borderColor: cfgPerc ? cfgPerc.color : '#99f6e4' }}>
+                <div className="flex items-center gap-1 mb-1.5">
+                  <Eye size={11} style={{ color: cfgPerc?.color ?? '#0d9488' }} />
+                  <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: cfgPerc?.color ?? '#0d9488' }}>Percepción</span>
+                  {percList.length > 0 && (
+                    <span className="ml-auto text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ backgroundColor: cfgPerc ? `${cfgPerc.color}20` : '#ccfbf1', color: cfgPerc?.color ?? '#0d9488' }}>
+                      {percList.length}
+                    </span>
+                  )}
+                </div>
+                {percList.length === 0 ? (
+                  <p className="text-[10px] text-gray-400 italic">Sin percepciones</p>
+                ) : cfgPerc ? (
+                  <>
+                    <div className="flex items-baseline gap-1.5 mb-0.5">
+                      <span className="text-lg font-black leading-none" style={{ color: cfgPerc.color }}>{cfgPerc.code}</span>
+                      <span className="text-xs font-bold leading-tight" style={{ color: cfgPerc.textColor }}>{cfgPerc.label}</span>
+                    </div>
+                    <p className="text-[10px] opacity-70 leading-snug" style={{ color: cfgPerc.textColor }}>{cfgPerc.description}</p>
+                  </>
+                ) : null}
+              </div>
+
+              <div className="rounded-xl border-2 p-3" style={{ backgroundColor: cfgAuto ? cfgAuto.bgColor : '#eff6ff', borderColor: cfgAuto ? cfgAuto.color : '#bfdbfe' }}>
+                <div className="flex items-center gap-1 mb-1.5">
+                  <User size={11} style={{ color: cfgAuto?.color ?? '#2563eb' }} />
+                  <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: cfgAuto?.color ?? '#2563eb' }}>Autoevaluación</span>
+                </div>
+                {!autoPerc ? (
+                  <p className="text-[10px] text-gray-400 italic">No completada</p>
+                ) : cfgAuto ? (
+                  <>
+                    <div className="flex items-baseline gap-1.5 mb-0.5">
+                      <span className="text-lg font-black leading-none" style={{ color: cfgAuto.color }}>{cfgAuto.code}</span>
+                      <span className="text-xs font-bold leading-tight" style={{ color: cfgAuto.textColor }}>{cfgAuto.label}</span>
+                    </div>
+                    <p className="text-[10px] opacity-70 leading-snug" style={{ color: cfgAuto.textColor }}>{cfgAuto.description}</p>
+                  </>
+                ) : null}
+              </div>
+            </div>
+
+          </div>
+        )}
 
         <div className="flex items-center gap-1.5 text-xs text-gray-400">
           <Calendar size={12} />

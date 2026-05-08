@@ -108,18 +108,31 @@ function inferLeader(target: Employee): Employee | null {
   return EMPLOYEES.find(e => e.id !== target.id && isLeader(e)) ?? null;
 }
 
+function pickRandom(candidates: Employee[]): Employee | null {
+  if (candidates.length === 0) return null;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
 function inferPeer(target: Employee, exclude: string[]): Employee | null {
-  // Same dept, not a leader, not already excluded
-  return EMPLOYEES.find(
+  const candidates = EMPLOYEES.filter(
     e => e.id !== target.id && !exclude.includes(e.id) && e.department === target.department && !isLeader(e)
-  ) ?? null;
+  );
+  // Fallback to any non-leader outside dept if none found
+  if (candidates.length === 0) {
+    const fallback = EMPLOYEES.filter(e => e.id !== target.id && !exclude.includes(e.id) && !isLeader(e));
+    return pickRandom(fallback);
+  }
+  return pickRandom(candidates);
 }
 
 function inferCollaborator(target: Employee, exclude: string[]): Employee | null {
-  // Someone in same dept who is NOT a leader and is "below" (lower seniority/non-manager) – just another non-leader colleague
-  return EMPLOYEES.find(
+  // Prefer same dept non-leaders not yet used; fallback to any non-leader
+  const sameDept = EMPLOYEES.filter(
     e => e.id !== target.id && !exclude.includes(e.id) && e.department === target.department && !isLeader(e)
-  ) ?? null;
+  );
+  if (sameDept.length > 0) return pickRandom(sameDept);
+  const anyNonLeader = EMPLOYEES.filter(e => e.id !== target.id && !exclude.includes(e.id) && !isLeader(e));
+  return pickRandom(anyNonLeader);
 }
 
 export interface SlotEvaluator {
@@ -482,6 +495,7 @@ function ExistingSessionPanel({
   copiedId,
   onCopy,
   onDelete,
+  onDeleteAssignment,
 }: {
   session: Evaluation360Session;
   assignments: Eval360Assignment[];
@@ -489,6 +503,7 @@ function ExistingSessionPanel({
   copiedId: string | null;
   onCopy: (link: string, id: string) => void;
   onDelete: (sessionId: string) => void;
+  onDeleteAssignment: (assignmentId: string) => void;
 }) {
   const periodLabel = EVAL_360_PERIODS.find(p => p.value === session.period)?.label ?? session.period;
   const completed = assignments.filter(a => !!a.completedAt).length;
@@ -576,20 +591,30 @@ function ExistingSessionPanel({
                     )}
                   </div>
                 </div>
-                {/* Copy link — always shown */}
+                {/* Actions */}
                 {!isDone && (
-                  <button
-                    type="button"
-                    onClick={() => onCopy(link, a.id)}
-                    title="Copiar enlace"
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold shrink-0 transition-all"
-                    style={{
-                      background: copiedId === a.id ? '#d1fae5' : '#f1f5f9',
-                      color: copiedId === a.id ? '#059669' : '#475569',
-                    }}
-                  >
-                    {copiedId === a.id ? <><Check size={10} /> Copiado</> : <><Copy size={10} /> Link</>}
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => onCopy(link, a.id)}
+                      title="Copiar enlace"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
+                      style={{
+                        background: copiedId === a.id ? '#d1fae5' : '#f1f5f9',
+                        color: copiedId === a.id ? '#059669' : '#475569',
+                      }}
+                    >
+                      {copiedId === a.id ? <><Check size={10} /> Copiado</> : <><Copy size={10} /> Link</>}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteAssignment(a.id)}
+                      title="Eliminar evaluación pendiente"
+                      className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-semibold bg-red-50 text-red-500 hover:bg-red-100 transition-all"
+                    >
+                      <Trash2 size={10} />
+                    </button>
+                  </div>
                 )}
                 {isDone && (
                   <span
@@ -639,7 +664,7 @@ function ExistingSessionPanel({
 /* ─── Main component ─────────────────────────────────────────────────────────── */
 
 export default function Assign360Modal({ targetEmployee, onClose }: Assign360ModalProps) {
-  const { createEval360Session, saveEval360Assignment, eval360Assignments, eval360Sessions, hasPeriodConflict, removeEval360Session } = useEvaluationStore();
+  const { createEval360Session, saveEval360Assignment, eval360Assignments, eval360Sessions, hasPeriodConflict, removeEval360Session, removeEval360Assignment } = useEvaluationStore();
 
   const [step, setStep] = useState<Step>('config');
 
@@ -841,6 +866,7 @@ export default function Assign360Modal({ targetEmployee, onClose }: Assign360Mod
                   copiedId={copiedId}
                   onCopy={handleCopy}
                   onDelete={removeEval360Session}
+                  onDeleteAssignment={removeEval360Assignment}
                 />
               )}
               {periodConflict && !existingSession && (

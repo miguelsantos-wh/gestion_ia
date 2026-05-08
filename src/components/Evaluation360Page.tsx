@@ -2,18 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   BarChart3, Eye, Clock, Search, ChevronRight, Users, UserPlus,
   CheckCircle2, X, AlertCircle, UserCheck, Briefcase, Equal, Globe, User,
-  TrendingUp, Award, BarChart2, ChevronDown, ChevronUp
+  TrendingUp, BarChart2, ChevronDown, ChevronUp, ArrowLeft, Award
 } from 'lucide-react';
 import { EMPLOYEES } from '../data/mockData';
 import { useUser } from '../context/UserContext';
 import { useEvaluationStore } from '../context/EvaluationContext';
 import type { Eval360Role } from '../types/evaluation';
 import type { Employee } from '../types';
-import Evaluation360Results from './Evaluation360Results';
-import PendingEvaluations360 from './PendingEvaluations360';
 import Assign360Modal from './Assign360Modal';
 import Eval360SessionStatusView from './Eval360SessionStatusView';
 import Eval360SessionResultsView from './Eval360SessionResultsView';
+import Eval360ResultsV2View from './Eval360ResultsV2View';
 import type { Evaluation360Session } from '../types/evaluation';
 import { EVAL_360_PERIODS } from '../types/evaluation';
 
@@ -338,17 +337,17 @@ function ResumenTab({ employee }: { employee: Employee }) {
 
 const TEAMS = ['Adminolt', 'CRMInbox', 'Wisphub'];
 
-function EmployeeDetailPanel({
+function EmployeeDetailView({
   employee,
-  onClose,
+  onBack,
   onAssign,
 }: {
   employee: Employee;
-  onClose: () => void;
+  onBack: () => void;
   onAssign: () => void;
 }) {
   const { eval360Sessions } = useEvaluationStore();
-  const [panelTab, setPanelTab] = useState<'estado' | 'resultados'>('estado');
+  const [activeTab, setActiveTab] = useState<'estado' | 'resultados'>('estado');
 
   const lastSession: Evaluation360Session | null = useMemo(() => {
     const sessions = eval360Sessions
@@ -361,82 +360,81 @@ function EmployeeDetailPanel({
     ? (EVAL_360_PERIODS.find(p => p.value === lastSession.period)?.label ?? lastSession.period)
     : null;
 
-  const PANEL_TABS = [
-    { id: 'estado' as const, label: 'Estado', icon: <Eye size={13} /> },
-    { id: 'resultados' as const, label: 'Resultados', icon: <BarChart3 size={13} /> },
+  const TABS = [
+    { id: 'estado' as const, label: 'Estado', icon: <Eye size={14} /> },
+    { id: 'resultados' as const, label: 'Resultados', icon: <BarChart3 size={14} /> },
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 12rem)' }}>
-      {/* Header */}
-      <div className="p-4 shrink-0 border-b border-gray-100 bg-gradient-to-br from-slate-50 to-gray-100">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-slate-200 flex items-center justify-center text-sm font-bold text-slate-700 shrink-0">
-              {employee.avatar}
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900 truncate">{employee.name}</p>
-              <p className="text-xs text-gray-500 truncate">{employee.position}</p>
-              <p className="text-xs text-gray-400">{employee.department}</p>
-            </div>
+    <div className="space-y-5">
+      {/* Top bar */}
+      <div className="flex items-center justify-between gap-4">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+        >
+          <ArrowLeft size={15} />
+          Volver a la lista
+        </button>
+        <button
+          type="button"
+          onClick={onAssign}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 text-white text-sm font-semibold hover:bg-slate-700 transition-colors shrink-0"
+        >
+          <UserPlus size={14} />
+          Nueva evaluación
+        </button>
+      </div>
+
+      {/* Employee identity card */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-xl font-bold text-slate-700 shrink-0">
+            {employee.avatar}
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={onAssign}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold hover:bg-slate-700 transition-colors"
-            >
-              <UserPlus size={12} />
-              Nueva evaluación
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-7 h-7 rounded-full bg-white/70 hover:bg-white flex items-center justify-center text-gray-500"
-            >
-              <X size={13} />
-            </button>
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-bold text-gray-900">{employee.name}</p>
+            <p className="text-sm text-gray-500">{employee.position}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{employee.department}</p>
           </div>
+          {lastSession && (
+            <div className="shrink-0 text-right hidden sm:block">
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Última sesión</p>
+              <p className="text-sm font-bold text-gray-800 mt-0.5">{lastSession.name}</p>
+              {periodLabel && <p className="text-xs text-gray-400">{periodLabel}</p>}
+            </div>
+          )}
         </div>
       </div>
 
       {!lastSession ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-          <BarChart2 size={28} className="text-gray-200 mb-3" />
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-16 text-center">
+          <BarChart2 size={32} className="text-gray-200 mb-3" />
           <p className="text-sm font-semibold text-gray-400">Sin evaluaciones aún</p>
-          <p className="text-xs text-gray-400 mt-1">Crea la primera evaluación 360 para este colaborador.</p>
+          <p className="text-xs text-gray-300 mt-1 max-w-xs">Crea la primera evaluación 360 para este colaborador.</p>
           <button
             type="button"
             onClick={onAssign}
-            className="mt-4 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 text-white text-sm font-semibold hover:bg-slate-700 transition-colors"
+            className="mt-5 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 text-white text-sm font-semibold hover:bg-slate-700 transition-colors"
           >
             <UserPlus size={14} />
             Asignar evaluación
           </button>
         </div>
       ) : (
-        <>
-          {/* Session label */}
-          <div className="px-4 pt-3 pb-1 shrink-0">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Última evaluación</p>
-            <div className="flex items-center gap-2 mt-0.5">
-              <p className="text-xs font-bold text-gray-800 truncate">{lastSession.name}</p>
-              {periodLabel && (
-                <span className="text-[10px] font-medium text-gray-400 shrink-0">{periodLabel}</span>
-              )}
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex gap-1 px-4 py-2 shrink-0">
-            {PANEL_TABS.map(tab => (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          {/* Tab bar */}
+          <div className="flex gap-1 p-3 border-b border-gray-100 bg-gray-50/60">
+            {TABS.map(tab => (
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setPanelTab(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  panelTab === tab.id ? 'bg-slate-800 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:text-gray-700'
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-slate-800 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-800 hover:bg-white border border-transparent hover:border-gray-200'
                 }`}
               >
                 {tab.icon}
@@ -445,16 +443,16 @@ function EmployeeDetailPanel({
             ))}
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto px-4 pb-4">
-            {panelTab === 'estado' && (
+          {/* Tab content */}
+          <div className="p-5">
+            {activeTab === 'estado' && (
               <Eval360SessionStatusView session={lastSession} onBack={() => {}} embedded />
             )}
-            {panelTab === 'resultados' && (
-              <Eval360SessionResultsView session={lastSession} onBack={() => {}} embedded />
+            {activeTab === 'resultados' && (
+              <Eval360ResultsV2View session={lastSession} onBack={() => {}} embedded />
             )}
           </div>
-        </>
+        </div>
       )}
     </div>
   );
@@ -483,13 +481,82 @@ function computeLastSessionScore(
   return all.reduce((sum, s) => sum + s.reduce((a, b) => a + b, 0) / s.length, 0) / all.length;
 }
 
+function GlobalStatsPanel() {
+  const { eval360Assignments, threeSixty } = useEvaluationStore();
+
+  const totalAssigned = eval360Assignments.length;
+  const totalCompleted = eval360Assignments.filter(a => a.completedAt).length;
+  const totalPending = eval360Assignments.filter(a => !a.completedAt).length;
+
+  const allScores: number[] = [];
+  EMPLOYEES.forEach(emp => {
+    const data = threeSixty[emp.id];
+    if (!data) return;
+    const subs: number[][] = [];
+    if (data.self) subs.push(data.self);
+    data.peers.forEach(p => { if (p.scores.length > 0) subs.push(p.scores); });
+    if (subs.length === 0) return;
+    const avg = subs.reduce((sum, s) => sum + s.reduce((a, b) => a + b, 0) / s.length, 0) / subs.length;
+    allScores.push(avg);
+  });
+  const globalAvg = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : null;
+  const completionPct = totalAssigned > 0 ? Math.round((totalCompleted / totalAssigned) * 100) : 0;
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4">
+        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+          <BarChart3 size={18} className="text-slate-600" />
+        </div>
+        <div>
+          <div className="text-xs font-medium text-gray-500">Total asignadas</div>
+          <div className="text-2xl font-bold text-gray-900 mt-0.5">{totalAssigned}</div>
+          <div className="text-xs text-gray-400 mt-0.5">evaluaciones</div>
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4">
+        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+          <CheckCircle2 size={18} className="text-emerald-600" />
+        </div>
+        <div>
+          <div className="text-xs font-medium text-gray-500">Completadas</div>
+          <div className="text-2xl font-bold text-emerald-600 mt-0.5">{totalCompleted}</div>
+          <div className="text-xs text-gray-400 mt-0.5">{completionPct}% del total</div>
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4">
+        <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+          <Clock size={18} className="text-amber-500" />
+        </div>
+        <div>
+          <div className="text-xs font-medium text-gray-500">Sin finalizar</div>
+          <div className="text-2xl font-bold text-amber-500 mt-0.5">{totalPending}</div>
+          <div className="text-xs text-gray-400 mt-0.5">pendientes</div>
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4">
+        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+          <TrendingUp size={18} className="text-blue-600" />
+        </div>
+        <div>
+          <div className="text-xs font-medium text-gray-500">Promedio general</div>
+          <div className={`text-2xl font-bold mt-0.5 ${globalAvg !== null ? getScoreColor(globalAvg) : 'text-gray-300'}`}>
+            {globalAvg !== null ? globalAvg.toFixed(2) : '—'}
+          </div>
+          <div className="text-xs text-gray-400 mt-0.5">de 5.0 · {allScores.length} evaluados</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Eval360AdminView() {
   const { eval360Assignments, eval360Sessions, threeSixty } = useEvaluationStore();
   const [search, setSearch] = useState('');
   const [filterArea, setFilterArea] = useState('all');
   const [filterTeam, setFilterTeam] = useState('all');
   const [filterPeriod, setFilterPeriod] = useState('all');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailEmployeeId, setDetailEmployeeId] = useState<string | null>(null);
   const [showAssignModalFor, setShowAssignModalFor] = useState<Employee | null>(null);
 
   const areas = useMemo(() => Array.from(new Set(EMPLOYEES.map(e => e.department))), []);
@@ -515,10 +582,26 @@ function Eval360AdminView() {
     });
   }, [search, filterArea, filterTeam, filterPeriod, eval360Sessions]);
 
-  const selectedEmployee = selectedId ? EMPLOYEES.find(e => e.id === selectedId) ?? null : null;
+  const detailEmployee = detailEmployeeId ? EMPLOYEES.find(e => e.id === detailEmployeeId) ?? null : null;
+
+  if (detailEmployee) {
+    return (
+      <>
+        <EmployeeDetailView
+          employee={detailEmployee}
+          onBack={() => setDetailEmployeeId(null)}
+          onAssign={() => setShowAssignModalFor(detailEmployee)}
+        />
+        {showAssignModalFor && (
+          <Assign360Modal targetEmployee={showAssignModalFor} onClose={() => setShowAssignModalFor(null)} />
+        )}
+      </>
+    );
+  }
 
   return (
     <div className="space-y-5">
+      <GlobalStatsPanel />
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {/* Header */}
         <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap gap-3 items-center">
@@ -579,116 +662,93 @@ function Eval360AdminView() {
           <span className="text-xs text-gray-400 ml-auto">{filtered.length} colaborador{filtered.length !== 1 ? 'es' : ''}</span>
         </div>
 
-        {/* Two-column layout */}
-        <div className={`grid ${selectedEmployee ? 'grid-cols-1 lg:grid-cols-[1fr_1.4fr]' : 'grid-cols-1'}`}>
-          {/* Left: table */}
-          <div className={`min-w-0 ${selectedEmployee ? 'border-r border-gray-100' : ''}`}>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/80">
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Colaborador</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Área</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Progreso</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Puntaje</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
-                    <th className="px-4 py-3 w-8" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-10 text-sm text-gray-400">
-                        No se encontraron colaboradores con los filtros actuales.
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/80">
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Colaborador</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Área</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Progreso</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Puntaje</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                <th className="px-4 py-3 w-36" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-10 text-sm text-gray-400">
+                    No se encontraron colaboradores con los filtros actuales.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map(emp => {
+                  const lastSession = [...eval360Sessions]
+                    .filter(s => s.targetEmployeeId === emp.id)
+                    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;
+                  const sessionAssignments = lastSession
+                    ? eval360Assignments.filter(a => a.sessionId === lastSession.id)
+                    : [];
+                  const completed = sessionAssignments.filter(a => a.completedAt).length;
+                  const total = sessionAssignments.length;
+                  const pct = total > 0 ? (completed / total) * 100 : 0;
+                  const lastScore = computeLastSessionScore(emp.id, eval360Sessions, eval360Assignments, threeSixty);
+                  const statusLabel = total === 0 ? 'Sin asignar' : pct === 100 ? 'Completo' : 'En progreso';
+                  const statusCls = total === 0
+                    ? 'bg-gray-100 text-gray-500'
+                    : pct === 100
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-blue-100 text-blue-700';
+
+                  return (
+                    <tr key={emp.id} className="hover:bg-gray-50/60 transition-colors">
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
+                            {emp.avatar}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 truncate">{emp.name}</p>
+                            <p className="text-[11px] text-gray-400 truncate">{emp.position}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="text-xs text-gray-600">{emp.department}</span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 bg-gray-100 rounded-full h-1.5">
+                            <div className="h-1.5 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: pct === 100 ? '#059669' : '#2563eb' }} />
+                          </div>
+                          <span className="text-[11px] text-gray-500 shrink-0">{completed}/{total}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        {lastScore !== null
+                          ? <span className={`text-sm font-black ${getScoreColor(lastScore)}`}>{lastScore.toFixed(2)}</span>
+                          : <span className="text-sm text-gray-300">—</span>}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${statusCls}`}>{statusLabel}</span>
+                      </td>
+                      <td className="px-4 py-3.5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setDetailEmployeeId(emp.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 bg-white hover:bg-slate-800 hover:text-white hover:border-slate-800 transition-all whitespace-nowrap"
+                        >
+                          <Eye size={12} />
+                          Ver detalles
+                        </button>
                       </td>
                     </tr>
-                  ) : (
-                    filtered.map(emp => {
-                      const lastSession = [...eval360Sessions]
-                        .filter(s => s.targetEmployeeId === emp.id)
-                        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;
-                      const sessionAssignments = lastSession
-                        ? eval360Assignments.filter(a => a.sessionId === lastSession.id)
-                        : [];
-                      const completed = sessionAssignments.filter(a => a.completedAt).length;
-                      const total = sessionAssignments.length;
-                      const pct = total > 0 ? (completed / total) * 100 : 0;
-                      const lastScore = computeLastSessionScore(emp.id, eval360Sessions, eval360Assignments, threeSixty);
-                      const isSelected = selectedId === emp.id;
-                      const statusLabel = total === 0 ? 'Sin asignar' : pct === 100 ? 'Completo' : 'En progreso';
-                      const statusCls = total === 0
-                        ? 'bg-gray-100 text-gray-500'
-                        : pct === 100
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : 'bg-blue-100 text-blue-700';
-
-                      return (
-                        <tr
-                          key={emp.id}
-                          className={`transition-colors cursor-pointer ${isSelected ? 'bg-slate-50 ring-1 ring-inset ring-slate-200' : 'hover:bg-gray-50/60'}`}
-                          onClick={() => setSelectedId(isSelected ? null : emp.id)}
-                        >
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
-                                {emp.avatar}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 truncate">{emp.name}</p>
-                                <p className="text-[11px] text-gray-400 truncate">{emp.position}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3.5">
-                            <span className="text-xs text-gray-600">{emp.department}</span>
-                          </td>
-                          <td className="px-4 py-3.5">
-                            <div className="flex items-center gap-2">
-                              <div className="w-16 bg-gray-100 rounded-full h-1.5">
-                                <div
-                                  className="h-1.5 rounded-full transition-all"
-                                  style={{ width: `${pct}%`, backgroundColor: pct === 100 ? '#059669' : '#2563eb' }}
-                                />
-                              </div>
-                              <span className="text-[11px] text-gray-500 shrink-0">{completed}/{total}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3.5">
-                            {lastScore !== null ? (
-                              <span className={`text-sm font-black ${getScoreColor(lastScore)}`}>{lastScore.toFixed(2)}</span>
-                            ) : (
-                              <span className="text-sm text-gray-300">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3.5">
-                            <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${statusCls}`}>
-                              {statusLabel}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3.5">
-                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${isSelected ? 'bg-slate-200 text-slate-600' : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500'}`}>
-                              <ChevronRight size={13} className={`transition-transform ${isSelected ? 'rotate-90' : ''}`} />
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Right: session detail panel */}
-          {selectedEmployee && (
-            <div className="p-4 lg:sticky lg:top-0 lg:self-start" style={{ maxHeight: 'calc(100vh - 10rem)', overflowY: 'auto' }}>
-              <EmployeeDetailPanel
-                employee={selectedEmployee}
-                onClose={() => setSelectedId(null)}
-                onAssign={() => setShowAssignModalFor(selectedEmployee)}
-              />
-            </div>
-          )}
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -703,67 +763,58 @@ function Eval360AdminView() {
 }
 
 function Eval360EmployeeView({ employeeId }: { employeeId: string }) {
-  const { threeSixty, eval360Assignments, syncCompletedEvaluations } = useEvaluationStore();
-  const employee = EMPLOYEES.find(e => e.id === employeeId);
+  const { eval360Sessions, syncCompletedEvaluations } = useEvaluationStore();
+  const [activeTab, setActiveTab] = useState<'estado' | 'resultados'>('estado');
 
   useEffect(() => {
     syncCompletedEvaluations();
   }, [syncCompletedEvaluations]);
 
-  if (!employee) return null;
-
-  const [activeTab, setActiveTab] = useState<'resumen' | 'resultados' | 'seguimiento'>('resumen');
-
-  const assignments = eval360Assignments.filter(a => a.targetEmployeeId === employeeId);
-  const data = threeSixty[employeeId];
-  const hasSelf = !!data?.self;
-  const peerCount = (data?.peers ?? []).length;
+  const lastSession = useMemo(() => {
+    const sessions = eval360Sessions
+      .filter(s => s.targetEmployeeId === employeeId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return sessions[0] ?? null;
+  }, [eval360Sessions, employeeId]);
 
   const TABS = [
-    { id: 'resumen' as const, label: 'Resumen', icon: <BarChart3 size={16} /> },
-    { id: 'resultados' as const, label: 'Mis Resultados', icon: <Eye size={16} /> },
-    { id: 'seguimiento' as const, label: 'Seguimiento', icon: <Clock size={16} /> },
+    { id: 'estado' as const, label: 'Estado', icon: <Clock size={16} /> },
+    { id: 'resultados' as const, label: 'Resultados', icon: <Eye size={16} /> },
   ];
 
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-4">
-        <div className={`p-4 rounded-xl border ${hasSelf ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-100'}`}>
-          <p className="text-xs font-semibold mb-1" style={{ color: hasSelf ? '#2563eb' : '#94a3b8' }}>Autoevaluación</p>
-          <p className={`text-lg font-bold ${hasSelf ? 'text-blue-800' : 'text-gray-400'}`}>{hasSelf ? 'Completada' : 'Pendiente'}</p>
-        </div>
-        <div className={`p-4 rounded-xl border ${peerCount > 0 ? 'bg-teal-50 border-teal-100' : 'bg-gray-50 border-gray-100'}`}>
-          <p className="text-xs font-semibold text-gray-500 mb-1">Evaluadores</p>
-          <p className={`text-lg font-bold ${peerCount > 0 ? 'text-teal-800' : 'text-gray-400'}`}>{peerCount}</p>
-        </div>
-        <div className={`p-4 rounded-xl border ${assignments.length > 0 ? 'bg-amber-50 border-amber-100' : 'bg-gray-50 border-gray-100'}`}>
-          <p className="text-xs font-semibold text-gray-500 mb-1">Asignaciones</p>
-          <p className={`text-lg font-bold ${assignments.length > 0 ? 'text-amber-800' : 'text-gray-400'}`}>{assignments.length}</p>
-        </div>
+  if (!lastSession) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <BarChart2 size={32} className="text-gray-200 mb-3" />
+        <p className="text-sm font-semibold text-gray-400">Sin evaluaciones aún</p>
+        <p className="text-xs text-gray-300 mt-1">Cuando se cree una evaluación 360 para ti, aparecerá aquí.</p>
       </div>
+    );
+  }
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-        <div className="border-b border-gray-100">
-          <div className="flex items-center overflow-x-auto">
-            {TABS.map(tab => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
-                  activeTab === tab.id ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
-          </div>
+  return (
+    <div className="space-y-5">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="flex gap-1 p-3 border-b border-gray-100 bg-gray-50/60">
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                activeTab === tab.id
+                  ? 'bg-slate-800 text-white shadow-sm'
+                  : 'text-gray-500 hover:text-gray-800 hover:bg-white border border-transparent hover:border-gray-200'
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
         </div>
-        <div className="p-6">
-          {activeTab === 'resumen' && <ResumenTab employee={employee} />}
-          {activeTab === 'resultados' && <Evaluation360Results employeeId={employeeId} />}
-          {activeTab === 'seguimiento' && <PendingEvaluations360 employeeId={employeeId} />}
+        <div className="p-5">
+          {activeTab === 'estado' && <Eval360SessionStatusView session={lastSession} onBack={() => {}} embedded />}
+          {activeTab === 'resultados' && <Eval360ResultsV2View session={lastSession} onBack={() => {}} embedded />}
         </div>
       </div>
     </div>

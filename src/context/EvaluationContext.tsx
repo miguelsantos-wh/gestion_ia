@@ -113,8 +113,8 @@ interface EvaluationContextValue {
   eval360Sessions: Evaluation360Session[];
   pdiItems: Record<string, PdiItem[]>;
   savePdiItems: (sessionId: string, items: PdiItem[]) => void;
-  saveSelfEvaluation: (employeeId: string, scores: number[]) => void;
-  savePeerEvaluation: (employeeId: string, evaluatorName: string, scores: number[]) => void;
+  saveSelfEvaluation: (employeeId: string, scores: number[], comment?: string) => void;
+  savePeerEvaluation: (employeeId: string, evaluatorName: string, scores: number[], comment?: string) => void;
   savePerceptionPlacement: (
     employeeId: string,
     evaluatorName: string,
@@ -131,7 +131,7 @@ interface EvaluationContextValue {
   markAssignmentComplete: (evaluatorId: string, targetId: string) => void;
   createEval360Session: (session: Omit<Evaluation360Session, 'id' | 'createdAt'>) => string | null;
   saveEval360Assignment: (assignment: Omit<Eval360Assignment, 'id' | 'assignedAt'>) => string;
-  completeEval360Assignment: (id: string, scores: number[]) => void;
+  completeEval360Assignment: (id: string, scores: number[], comment?: string) => void;
   removeEval360Assignment: (id: string) => void;
   removeEval360Session: (sessionId: string) => void;
   syncCompletedEvaluations: () => void;
@@ -220,14 +220,14 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const saveSelfEvaluation = useCallback(
-    (employeeId: string, scores: number[]) => {
+    (employeeId: string, scores: number[], comment?: string) => {
       setStore((prev) => {
         const cur = prev.threeSixty[employeeId] ?? { peers: [] };
         let next: EvaluationStorage = {
           ...prev,
           threeSixty: {
             ...prev.threeSixty,
-            [employeeId]: { ...cur, self: scores },
+            [employeeId]: { ...cur, self: scores, selfComment: comment?.trim() || undefined },
           },
         };
         next = triggerSync(next);
@@ -239,11 +239,12 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
   );
 
   const savePeerEvaluation = useCallback(
-    (employeeId: string, evaluatorName: string, scores: number[]) => {
+    (employeeId: string, evaluatorName: string, scores: number[], comment?: string) => {
       const sub: PeerSubmission = {
         evaluatorName: evaluatorName.trim() || 'Anónimo',
         scores,
         at: new Date().toISOString(),
+        ...(comment?.trim() ? { comment: comment.trim() } : {}),
       };
       setStore((prev) => {
         const cur = prev.threeSixty[employeeId] ?? { peers: [] };
@@ -429,12 +430,14 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
   );
 
   const completeEval360Assignment = useCallback(
-    (id: string, scores: number[]) => {
+    (id: string, scores: number[], comment?: string) => {
       setStore((prev) => {
         const next: EvaluationStorage = {
           ...prev,
           eval360Assignments: (prev.eval360Assignments ?? []).map((a) =>
-            a.id === id ? { ...a, completedAt: new Date().toISOString(), scores } : a
+            a.id === id
+              ? { ...a, completedAt: new Date().toISOString(), scores, ...(comment?.trim() ? { comment: comment.trim() } : {}) }
+              : a
           ),
         };
         persist(next);

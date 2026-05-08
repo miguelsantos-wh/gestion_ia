@@ -464,7 +464,7 @@ export default function EmpleadoAPage() {
   const { currentEmployee, isAdmin } = useUser();
   const [activeTab, setActiveTab] = useState<EmpleadoATab>('resumen');
 
-  if (!currentEmployee) {
+  if (!isAdmin && !currentEmployee) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <p className="text-gray-500">No hay empleado asignado a tu cuenta.</p>
@@ -501,7 +501,7 @@ export default function EmpleadoAPage() {
           {activeTab === 'resultados' && (
             isAdmin
               ? <AllResultsView />
-              : <MyResultsView employeeId={currentEmployee.id} />
+              : currentEmployee && <MyResultsView employeeId={currentEmployee.id} />
           )}
         </div>
       </div>
